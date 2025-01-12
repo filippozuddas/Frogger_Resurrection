@@ -17,20 +17,20 @@
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
-#define CROC_LENGHT 16
+#define CROC_LENGHT 21
 
 typedef struct {
     pid_t pid;
     int x;
     int y;
-    int isVisible;
+    //int isVisible;
     int speed; 
     int direction; 
 } Crocodile;
 
-extern const char *crocSprite[CROC_HEIGHT];
+extern const char *crocSprite[CROC_HEIGHT][CROC_LENGHT];
 extern int flowDirection[N_FLOW]; 
 extern int flowSpeed[N_FLOW]; 
 
-void createCroc(int pipeFd[]); 
-void moveCroc(Crocodile *croc, int flow); 
+void createCroc(Crocodile *croc, int pipeFd[]); 
+void moveCroc(Crocodile *croc); 

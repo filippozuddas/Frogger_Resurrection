@@ -96,11 +96,11 @@ void moveCroc(Crocodile *croc, int flow) {
 int flowDirection[N_FLOW];
 int flowSpeed[N_FLOW];
 
-const char *crocSprite[CROC_HEIGHT] = {
+const char *crocSprite[CROC_HEIGHT][CROC_LENGHT] = {
     "  __________   ",
-    " / \\        \\",
+    " / \\        \\  ",
     "| @ | ------ | ",
-    " \\_/________/ "
+    " \\_/________/  "
 };
 
 /*
@@ -123,19 +123,23 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
     return 1; // posizione valida
 }
 
-void createCroc(int pipeFd[]) {
-    pid_t pids[N_CROC];
-    // Array temporaneo di coccodrilli solo per il controllo dello spawn
-    Crocodile crocodilesSpawned[N_CROC];
+void createCroc(Crocodile *croc, int pipeFd[]) {
+
     int crocID = 0;          // Conta i coccodrilli totali
     int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
 
+    Crocodile tempCroc; 
+
     srand(time(NULL));
 
-    // Inizializza la direzione e la velocità per i flussi
+    //inizializza la direzione dei flussi  (0 => destra; 1 => sinistra)
+    flowDirection[0] = rand() % 2; 
+    for (int i = 1; i < N_FLOW; i++) {
+        flowDirection[i] = !flowDirection[i-1]; 
+    }
+
+    // Inizializza la velocità dei i flussi
     for (int i = 0; i < N_FLOW; i++) {
-        // 0 => destra; 1 => sinistra
-        flowDirection[i] = rand() % 2;
         flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
     }
 
@@ -146,17 +150,22 @@ void createCroc(int pipeFd[]) {
             int spawnY = (LINES - 6) - (flow * CROC_HEIGHT);
 
             // Trova x casuale valida
-            int validPositionFound = 0;
             int spawnX = 0;
+            int validPosition = 0;
 
             // Ciclo per trovare una posizione non sovrapposta
-            while (!validPositionFound) {
+            while (!validPosition) {
                 // x casuale interna al limite (es. da 1 a COLS - CROC_LENGHT - 2)
-                spawnX = rand() % (COLS - CROC_LENGHT - 2) + 1;
-                validPositionFound = isPositionValid(spawnX, spawnY,
-                                                     crocodilesSpawned,
-                                                     placedCrocCount);
+                spawnX = rand() % (COLS - CROC_LENGHT) + 1;
+                validPosition = isPositionValid(spawnX, spawnY,croc, placedCrocCount);
             }
+
+            //inizializzo i valori prima della fork 
+            tempCroc.x = spawnX;
+            tempCroc.y = spawnY;
+            //tempCroc.isVisible = 1;
+            tempCroc.direction = flowDirection[flow]; 
+            tempCroc.speed = flowSpeed[flow]; 
 
             pid_t pid = fork();
             if (pid < 0) {
@@ -164,36 +173,20 @@ void createCroc(int pipeFd[]) {
                 exit(EXIT_FAILURE);
             }
             else if (pid == 0) {
-                // Processo figlio
-                Crocodile tempCroc;
+                // Crocodile tempCroc;
                 srand(time(NULL) ^ getpid());
-
-                tempCroc.x = spawnX;
-                tempCroc.y = spawnY;
-                tempCroc.isVisible = 1;
-                tempCroc.pid = getpid();
-
                 close(pipeFd[0]); // chiude il lato di lettura
 
-                // Pausa iniziale per desincronizzare un po' i coccodrilli
-                //sleep(rand() % (MAX_V - MIN_V + 1) + MIN_V);
-
-                // Loop infinito per muovere il coccodrillo e inviare i dati
-                while (1) {
-                    moveCroc(&tempCroc, flow);
+                while(1){
+                    moveCroc(&tempCroc);
                     write(pipeFd[1], &tempCroc, sizeof(Crocodile));
                     usleep(flowSpeed[flow] * 10000);
                 }
-                exit(EXIT_SUCCESS);
+                exit(0);
             }
             else {
-                // Processo padre: salva PID e posizione in crocodilesSpawned
-                pids[crocID] = pid;
-
-                crocodilesSpawned[crocID].x = spawnX;
-                crocodilesSpawned[crocID].y = spawnY;
-                crocodilesSpawned[crocID].isVisible = 1;
-                crocodilesSpawned[crocID].pid = pid;
+                tempCroc.pid = pid; 
+                croc[crocID] = tempCroc; 
 
                 crocID++;
                 placedCrocCount++;
@@ -202,31 +195,27 @@ void createCroc(int pipeFd[]) {
     }
 }
 
-void moveCroc(Crocodile *croc, int flow) {
+/*void moveCroc(Crocodile *croc) {
     if (croc->isVisible) {
         // Direzione 0 => muovi a destra
         // Direzione 1 => muovi a sinistra
-        if (flowDirection[flow] == 0) {
+        if (croc->direction == 0) {
             croc->x++;
             // Se superi il margine a destra
-            if (croc->x >= (COLS - CROC_LENGHT)) {
+            if (croc->x >= (COLS + CROC_LENGHT + 1)) {
                 croc->isVisible = 0;
             }
         }
         else {
             croc->x--;
-            if (croc->x <= 0) {
+            if (croc->x <= 0 - CROC_LENGHT) {
                 croc->isVisible = 0;
             }
         }
     }
     else {
-        /*
-        Se non è visibile, aspetta un po' e ricollocalo
-        (per simulare la “ricomparsa” del coccodrillo).
-        */
         sleep(rand() % (3 - 2 + 1) + 2);
-        if (flowDirection[flow] == 0) {
+        if (croc->direction == 0) {
             // Se il flow è verso destra, ricomincia da sinistra
             croc->x = 0;
         }
@@ -235,5 +224,22 @@ void moveCroc(Crocodile *croc, int flow) {
             croc->x = COLS - CROC_LENGHT;
         }
         croc->isVisible = 1;
+    }
+}*/
+
+void moveCroc(Crocodile *croc) {
+    if (croc->direction == 0) {
+        croc->x++; 
+        if (croc->x >= COLS + 1 + CROC_LENGHT){
+            sleep(rand() % (3 - 2 + 1) + 2);
+            croc->x = 0 - CROC_LENGHT;
+        }
+    }
+    else {
+        croc->x--; 
+        if(croc->x < -2 -CROC_LENGHT) {
+            sleep(rand() % (3 - 2 + 1) + 2); 
+            croc->x = COLS - 1 + CROC_LENGHT;
+        }
     }
 }

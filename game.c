@@ -25,7 +25,7 @@ void initGame(Game *game) {
 
 void runGame(Game* game) {
 
-    createCroc(game->pipeFd);
+    createCroc(game->crocodile, game->pipeFd);
 
     close(game->pipeFd[1]);
 
@@ -61,17 +61,19 @@ void runGame(Game* game) {
 
             // Disegna i coccodrilli nella finestra separata
             
-            /*for (int i = 0; i < N_CROC; i++) {
-                printCroc(croc[i].x, croc[i].y, flowDirection[i]); 
-            }*/
-            
             for (int i = 0; i < N_CROC; i++) {
-                if (croc[i].isVisible) {
-                    for (int j = 0; j < CROC_HEIGHT; j++) {
-                        mvprintw(croc[i].y + j, croc[i].x, "%s", crocSprite[j]);
-                    }
-                }
+                printCroc(croc[i].x, croc[i].y, flowDirection[i]); 
             }
+            
+            /*for (int i = 0; i < N_CROC; i++) {
+                //if (croc[i].isVisible) {
+                    for (int row = 0; row < CROC_HEIGHT; row++) {
+                        for (int col = CROC_LENGHT - 1; col >= 0; col--) {
+                            mvaddch(croc[i].y + row, croc[i].x, (chtype)crocSprite[row][col]);
+                        }
+                    }
+                //}
+            }*/
 
             // Aggiorna la finestra dei coccodrilli
             refresh();

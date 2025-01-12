@@ -1,4 +1,4 @@
-/*#include "sprite.h"
+#include "sprite.h"
 #include "colors.h"
 
 void printCroc(int x, int y, int direction) {
@@ -22,7 +22,7 @@ void printCroc(int x, int y, int direction) {
                 short xx = x + (CROC_LENGHT - j); 
                 if(crocSprite[i][j] != L'n'){
                     CHANGE_COLOR(colors[i][j]); 
-                    mvprintw(y+i, xx, "%lc", crocSprite[i][j]); 
+                    mvaddch(y+i, xx, crocSprite[i][j]); 
                 }
             }
         }
@@ -33,13 +33,13 @@ void printCroc(int x, int y, int direction) {
                 short xx = x + j + 1; 
                 if(crocSprite[i][j] != L'n'){
                     CHANGE_COLOR(colors[i][j]); 
-                    mvprintw(y+i, xx, "%lc", crocSprite[i][j]); 
+                    mvaddch(y+i, xx, crocSprite[i][j]); 
                 }
             }
         }
     }
 
-}*/
+}
 
 
 //  ▀ █ ▄

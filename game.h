@@ -10,7 +10,7 @@
 typedef struct {
     unsigned int isRunning; 
     int pipeFd[2]; 
-    Crocodile crocodile; 
+    Crocodile crocodile[N_CROC]; 
     //Frog frog; 
 } Game;
 
