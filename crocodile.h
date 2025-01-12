@@ -17,13 +17,15 @@
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
-#define CROC_LENGHT 21
+#define CROC_LENGHT 16
 
 typedef struct {
+    pid_t pid;
     int x;
     int y;
     int isVisible;
-    pid_t pid;
+    int speed; 
+    int direction; 
 } Crocodile;
 
 extern const char *crocSprite[CROC_HEIGHT];

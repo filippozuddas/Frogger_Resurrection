@@ -17,9 +17,8 @@ void initGame(Game *game) {
 
     game->isRunning = 1; 
 
-    pipe(game->pipeFd); 
-    if(game->pipeFd < 0) {
-        perror("pipe error"); 
+    if(pipe(game->pipeFd) < 0) {
+        perror("pipe creation error"); 
         exit(1); 
     }
 }
@@ -33,7 +32,7 @@ void runGame(Game* game) {
     Crocodile croc[N_CROC]; 
     memset(croc, 0, sizeof(croc)); 
 
-    while (1) {
+    while (game->isRunning) {
         int ch = getch();
         
         // Esci con 'q' o 'Q'
@@ -62,17 +61,17 @@ void runGame(Game* game) {
 
             // Disegna i coccodrilli nella finestra separata
             
-            for (int i = 0; i < N_CROC; i++) {
-                printCroc(croc[i].x, croc[i].y, flowDirection[i]); 
-            }
-            
             /*for (int i = 0; i < N_CROC; i++) {
+                printCroc(croc[i].x, croc[i].y, flowDirection[i]); 
+            }*/
+            
+            for (int i = 0; i < N_CROC; i++) {
                 if (croc[i].isVisible) {
                     for (int j = 0; j < CROC_HEIGHT; j++) {
                         mvprintw(croc[i].y + j, croc[i].x, "%s", crocSprite[j]);
                     }
                 }
-            }*/
+            }
 
             // Aggiorna la finestra dei coccodrilli
             refresh();

@@ -109,17 +109,16 @@ const char *crocSprite[CROC_HEIGHT] = {
  */
 static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
     for (int i = 0; i < count; i++) {
-        if (crocodiles[i].isVisible) {
-            // Se hanno la stessa riga
-            if (crocodiles[i].y == y_new) {
-                // Calcola distanza in base a x
-                int diff = abs(x_new - crocodiles[i].x); 
-                // Se si sovrappongono o sono troppo vicini
-                if (diff < (CROC_LENGHT + MIN_CROC_DISTANCE)) {
-                    return 0; // posizione non valida
-                }
+        // Se hanno la stessa riga
+        if (crocodiles[i].y == y_new) {
+            // Calcola distanza in base a x
+            int diff = abs(x_new - crocodiles[i].x); 
+            // Se si sovrappongono o sono troppo vicini
+            if (diff < (CROC_LENGHT + MIN_CROC_DISTANCE)) {
+                return 0; // posizione non valida
             }
         }
+        
     }
     return 1; // posizione valida
 }
@@ -226,7 +225,7 @@ void moveCroc(Crocodile *croc, int flow) {
         Se non è visibile, aspetta un po' e ricollocalo
         (per simulare la “ricomparsa” del coccodrillo).
         */
-        sleep(rand() % (3 - 1 + 1) + 1);
+        sleep(rand() % (3 - 2 + 1) + 2);
         if (flowDirection[flow] == 0) {
             // Se il flow è verso destra, ricomincia da sinistra
             croc->x = 0;

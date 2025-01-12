@@ -1,4 +1,4 @@
-#include "sprite.h"
+/*#include "sprite.h"
 #include "colors.h"
 
 void printCroc(int x, int y, int direction) {
@@ -39,7 +39,7 @@ void printCroc(int x, int y, int direction) {
         }
     }
 
-}
+}*/
 
 
 //  ▀ █ ▄
