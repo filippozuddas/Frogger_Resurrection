@@ -1,5 +1,4 @@
 #include "sprite.h"
-#include "colors.h"
 
 void printCroc(int x, int y, int direction) {
     wchar_t crocSprite[CROC_HEIGHT][CROC_LENGHT] = {
@@ -39,6 +38,21 @@ void printCroc(int x, int y, int direction) {
         }
     }
 
+}
+
+void printFrog(int x, int y) {
+    char frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
+        {' ', '/', 'o', ' ', 'o', '\\', ' '}, 
+        {'(', ' ', ' ', '^', ' ', ' ', ')'},
+        {'(', ' ', ' ', ' ', ' ', ' ', ')'},
+        {' ', '\\', ' ', ' ', ' ', '/', ' '}
+    };
+
+    for (int i = 0; i < FROG_HEIGHT; i++) {
+        for (int j = 0; j < FROG_LENGTH; j++) {
+            mvaddch(y + i, x + j, frogSprite[i][j]);
+        }
+    }
 }
 
 

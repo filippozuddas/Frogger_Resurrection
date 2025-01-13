@@ -1,107 +1,10 @@
-/*#include "crocodile.h"
-#include <stdlib.h>
-
-
-int flowDirection[N_FLOW]; 
-int flowSpeed[N_FLOW]; 
-
-const char *crocSprite[CROC_HEIGHT] = {
-    "  __________   ",
-    " / \\        \\",
-    "| @ | ------ | ",
-    " \\_/________/ "
-};
-
-void createCroc(int pipeFd[]) {
-    //inizializzazione randomica della direzione di ogni flusso 
-    flowDirection[0] = rand() % 2; 
-    for (int i = 1; i < N_FLOW; i++){
-        flowDirection[i] = !flowDirection[i - 1];
-    }
-
-    //inizializzazione della velocità di ogni flusso 
-    for (int i = 0; i < N_FLOW; i++) {
-        flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MAX_V; 
-    }
-
-    pid_t pids[N_CROC]; 
-    int crocID = 0; 
-
-    for (int i = 0; i < N_FLOW; i++) {
-        for (int j = 0; j < CROC_PER_FLOW; j++) {
-            //pids[crocID] = fork(); 
-            pid_t pid = fork();
-            if (pid < 0){
-                perror("Fork error"); 
-                exit(1); 
-            }
-            else if (pid == 0) {
-                Crocodile tempCroc; 
-
-                srand(time(NULL) ^ getpid()); 
-                tempCroc.x = (flowDirection[i] == 0) ? 0 : COLS - 15; 
-                tempCroc.y = (LINES - 6) - (i * CROC_HEIGHT); 
-                tempCroc.isVisible = 1;
-                tempCroc.pid = getpid(); 
-
-                sleep(rand() % (MAX_V - MIN_V + 1) + MIN_V);
-
-                close(pipeFd[0]); 
-
-                while(1){
-                    moveCroc(&tempCroc, i); 
-                    write(pipeFd[1], &tempCroc, sizeof(Crocodile)); 
-                    usleep(flowSpeed[i] * 10000); 
-                }
-                exit(0); 
-            }  
-            else 
-                pids[crocID++] = pid;
-        }
-    }
-}
-
-void moveCroc(Crocodile *croc, int flow) {
-    if (croc->isVisible) {
-        if(flowDirection[flow] == 0) {
-            croc->x++; 
-            
-            if (croc->x >= COLS - 15) {
-                croc->isVisible = 0; 
-            }
-        }
-        else{
-            croc->x--; 
-            
-            if (croc->x <= 0) {
-                croc->isVisible = 0;
-            }
-        }
-    }
-    else {
-        sleep(rand() % (MAX_V - MIN_V + 1) + MIN_V);
-        croc->x = (flowDirection[flow] == 0) ? 0 : COLS - 15;
-        croc->isVisible = 1; 
-    }
-}
-*/
 #include "crocodile.h"
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 // Definisci una distanza minima di sicurezza tra coccodrilli (per evitare sovrapposizioni)
 #define MIN_CROC_DISTANCE 8
 
 int flowDirection[N_FLOW];
 int flowSpeed[N_FLOW];
-
-const char *crocSprite[CROC_HEIGHT][CROC_LENGHT] = {
-    "  __________   ",
-    " / \\        \\  ",
-    "| @ | ------ | ",
-    " \\_/________/  "
-};
 
 /*
  * isPositionValid controlla se la nuova x è sufficientemente distante
@@ -147,7 +50,7 @@ void createCroc(Crocodile *croc, int pipeFd[]) {
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
             // Decidiamo la y in base al flusso corrente
-            int spawnY = (LINES - 6) - (flow * CROC_HEIGHT);
+            int spawnY = (LINES - 10) - (flow * CROC_HEIGHT);
 
             // Trova x casuale valida
             int spawnX = 0;

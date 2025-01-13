@@ -28,6 +28,7 @@ void initGame(Game *game) {
 void runGame(Game* game) {
 
     createCroc(game->crocodile, game->pipeFd);
+    createFrog(&(game->frog), game->pipeFd); 
 
     close(game->pipeFd[1]);
 
@@ -58,10 +59,8 @@ void runGame(Game* game) {
                 croc[found] = tempCroc;
             }
 
-            // Cancella la finestra dei coccodrilli
+            // non so perchè funziona meglio di clear()
             werase(stdscr);
-
-            // Disegna i coccodrilli nella finestra separata
             
             for (int i = 0; i < N_CROC; i++) {
                 printCroc(croc[i].x, croc[i].y, croc[i].direction); 
@@ -77,11 +76,23 @@ void runGame(Game* game) {
                 //}
             }*/
 
-            // Aggiorna la finestra dei coccodrilli
             refresh();
         } 
+
+        /*--------------------------------------------------*/
+
+        Frog tempFrog; 
+
+        if (read(game->pipeFd[0], &tempFrog, sizeof(Frog)) > 0) {
+            werase(stdscr); 
+            printFrog(tempFrog.x, tempFrog.y); 
+            refresh(); 
+        }
     }
 
+}
+
+void stopGame(Game *game) {
     //Termina tutti i processi figli
     for (int i = 0; i < N_CROC; i++) {
         kill(pids[i], SIGTERM);
@@ -91,8 +102,6 @@ void runGame(Game* game) {
     for (int i = 0; i < N_CROC; i++) {
         waitpid(pids[i], NULL, 0);
     }
-}
-
-void stopGame(Game *game) {
+    
     endwin(); 
 }
