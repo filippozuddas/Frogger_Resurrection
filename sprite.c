@@ -16,7 +16,7 @@ void printCroc(int x, int y, int direction) {
         {BLACK_BLACK, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_GREEN, BLACK_BLACK, BG_BG,       BG_BG}
     }; 
 
-    if (direction == 0) {
+    if (direction == 1) {
         for (int i = 0; i < CROC_HEIGHT; i++) {
             for (int j = (CROC_LENGHT-1); j >= 0; j--) {
                 short xx = x + (CROC_LENGHT - j); 

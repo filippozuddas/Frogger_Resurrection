@@ -1,6 +1,9 @@
 #include "game.h"
+#include <locale.h>
 
 int main() {
+    //setlocale(LC_ALL, ""); 
+
     Game game; 
     game.isRunning = 0; 
 

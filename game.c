@@ -11,6 +11,8 @@ void initGame(Game *game) {
     curs_set(0);
     nodelay(stdscr, TRUE);
     start_color();
+
+    setColors(); 
     srand(time(NULL)); 
 
     setlocale(LC_ALL, ""); 
@@ -57,12 +59,12 @@ void runGame(Game* game) {
             }
 
             // Cancella la finestra dei coccodrilli
-            clear();
+            werase(stdscr);
 
             // Disegna i coccodrilli nella finestra separata
             
             for (int i = 0; i < N_CROC; i++) {
-                printCroc(croc[i].x, croc[i].y, flowDirection[i]); 
+                printCroc(croc[i].x, croc[i].y, croc[i].direction); 
             }
             
             /*for (int i = 0; i < N_CROC; i++) {
