@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include "struct.h"
 
 #define MAX_V 8
 #define MIN_V 5
@@ -32,5 +33,5 @@ extern const char *crocSprite[CROC_HEIGHT][CROC_LENGHT];
 extern int flowDirection[N_FLOW]; 
 extern int flowSpeed[N_FLOW]; 
 
-void createCroc(Crocodile *croc, int pipeFd[]); 
-void moveCroc(Crocodile *croc); 
+void createCroc(Crocodile *croc, int *pipeFd); 
+void moveCroc(Crocodile *croc, int *pipeFd); 

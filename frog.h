@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include "struct.h"
 
 
 #define FROG_LENGTH 7

@@ -3,7 +3,7 @@
 void createFrog(Frog *frog, int pipeFd[]) {
     //inizializzazione frog
     frog->x = (COLS - 1)/2; 
-    frog->y = LINES - 1; 
+    frog->y = LINES - 5; 
     frog->lives = 3; 
     frog->score = 0; 
     frog->isOnCroc = 0; 
@@ -22,6 +22,7 @@ void createFrog(Frog *frog, int pipeFd[]) {
 }
 
 void moveFrog(Frog *frog, int pipeFd[]) {
+    usleep(1000);
     while(1) {
         int input = getch(); 
 
@@ -34,21 +35,24 @@ void moveFrog(Frog *frog, int pipeFd[]) {
             case 's':
             case 'S':
             case KEY_DOWN:
-                frog->y = (frog->y < LINES - 1) ? frog->y + 1 : frog->y;
-                break;
-            case 'a':
-            case 'A':
-            case KEY_RIGHT:
-                frog->x = (frog->y < COLS - 1) ? frog->x + 1 : frog->x;
+                frog->y = (frog->y < LINES - FROG_HEIGHT) ? frog->y + 1 : frog->y;
                 break;
             case 'd':
             case 'D':
+            case KEY_RIGHT:
+                frog->x = (frog->x < COLS - 1) ? frog->x + 1 : frog->x;
+                break;
+            case 'a':
+            case 'A':
             case KEY_LEFT:
                 frog->x = (frog->x > 0) ? frog->x - 1 : frog->x;
                 break;
             default:
                 continue;
         }
+
+        MessageType type = MSG_FROG;
+        write(pipeFd[1], &type, sizeof(type)); 
         write(pipeFd[1], frog, sizeof(Frog)); 
     }
 }

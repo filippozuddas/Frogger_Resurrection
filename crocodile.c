@@ -26,7 +26,7 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
     return 1; // posizione valida
 }
 
-void createCroc(Crocodile *croc, int pipeFd[]) {
+void createCroc(Crocodile *croc, int *pipeFd) {
 
     int crocID = 0;          // Conta i coccodrilli totali
     int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
@@ -80,11 +80,7 @@ void createCroc(Crocodile *croc, int pipeFd[]) {
                 srand(time(NULL) ^ getpid());
                 close(pipeFd[0]); // chiude il lato di lettura
 
-                while(1){
-                    moveCroc(&tempCroc);
-                    write(pipeFd[1], &tempCroc, sizeof(Crocodile));
-                    usleep(flowSpeed[flow] * 10000);
-                }
+                moveCroc(&tempCroc, pipeFd);
                 exit(0);
             }
             else {
@@ -98,51 +94,26 @@ void createCroc(Crocodile *croc, int pipeFd[]) {
     }
 }
 
-/*void moveCroc(Crocodile *croc) {
-    if (croc->isVisible) {
-        // Direzione 0 => muovi a destra
-        // Direzione 1 => muovi a sinistra
+void moveCroc(Crocodile *croc, int *pipeFd) {
+    while(1){
         if (croc->direction == 0) {
-            croc->x++;
-            // Se superi il margine a destra
-            if (croc->x >= (COLS + CROC_LENGHT + 1)) {
-                croc->isVisible = 0;
+            croc->x++; 
+            if (croc->x >= COLS + 1 + CROC_LENGHT){
+                sleep(rand() % (3 - 2 + 1) + 2);
+                croc->x = 0 - CROC_LENGHT;
             }
         }
         else {
-            croc->x--;
-            if (croc->x <= 0 - CROC_LENGHT) {
-                croc->isVisible = 0;
+            croc->x--; 
+            if(croc->x < -2 -CROC_LENGHT) {
+                sleep(rand() % (3 - 2 + 1) + 2); 
+                croc->x = COLS - 1 + CROC_LENGHT;
             }
         }
-    }
-    else {
-        sleep(rand() % (3 - 2 + 1) + 2);
-        if (croc->direction == 0) {
-            // Se il flow è verso destra, ricomincia da sinistra
-            croc->x = 0;
-        }
-        else {
-            // Se il flow è verso sinistra, ricomincia da destra
-            croc->x = COLS - CROC_LENGHT;
-        }
-        croc->isVisible = 1;
-    }
-}*/
 
-void moveCroc(Crocodile *croc) {
-    if (croc->direction == 0) {
-        croc->x++; 
-        if (croc->x >= COLS + 1 + CROC_LENGHT){
-            sleep(rand() % (3 - 2 + 1) + 2);
-            croc->x = 0 - CROC_LENGHT;
-        }
-    }
-    else {
-        croc->x--; 
-        if(croc->x < -2 -CROC_LENGHT) {
-            sleep(rand() % (3 - 2 + 1) + 2); 
-            croc->x = COLS - 1 + CROC_LENGHT;
-        }
+        MessageType type = MSG_CROC;
+        write(pipeFd[1], &type, sizeof(type)); 
+        write(pipeFd[1], croc, sizeof(Crocodile));
+        usleep(croc->speed * 10000);
     }
 }

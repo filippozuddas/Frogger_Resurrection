@@ -10,6 +10,7 @@ void initGame(Game *game) {
     noecho();
     curs_set(0);
     nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
     start_color();
 
     setColors(); 
@@ -42,54 +43,53 @@ void runGame(Game* game) {
         if (ch == 'q' || ch == 'Q') {
             break;
         }
-        
-        Crocodile tempCroc;
 
-        if (read(game->pipeFd[0], &tempCroc, sizeof(Crocodile)) > 0) {
-            // Trova l'indice corrispondente al pid o a un posto vuoto
-            int found = -1;
-            for (int i = 0; i < N_CROC; i++) {
-                if (croc[i].pid == tempCroc.pid || croc[i].pid == 0) {
-                    found = i;
-                    break;
-                }
-            }
+        MessageType type;
 
-            if (found != -1) {
-                croc[found] = tempCroc;
-            }
-
-            // non so perchè funziona meglio di clear()
-            werase(stdscr);
-            
-            for (int i = 0; i < N_CROC; i++) {
-                printCroc(croc[i].x, croc[i].y, croc[i].direction); 
-            }
-            
-            /*for (int i = 0; i < N_CROC; i++) {
-                //if (croc[i].isVisible) {
-                    for (int row = 0; row < CROC_HEIGHT; row++) {
-                        for (int col = CROC_LENGHT - 1; col >= 0; col--) {
-                            mvaddch(croc[i].y + row, croc[i].x, (chtype)crocSprite[row][col]);
+        if (read(game->pipeFd[0], &type, sizeof(type)) > 0) {
+            if(type == MSG_CROC){
+                Crocodile tempCroc;
+                if (read(game->pipeFd[0], &tempCroc, sizeof(Crocodile)) > 0) {
+                    // Trova l'indice corrispondente al pid o a un posto vuoto
+                    int found = -1;
+                    for (int i = 0; i < N_CROC; i++) {
+                        if (croc[i].pid == tempCroc.pid || croc[i].pid == 0) {
+                            found = i;
+                            break;
                         }
                     }
-                //}
-            }*/
 
-            refresh();
-        } 
+                    if (found != -1) {
+                        croc[found] = tempCroc;
+                    }
 
-        /*--------------------------------------------------*/
+                    // non so perchè funziona meglio di clear()
+                    werase(stdscr);
+                    
+                    for (int i = 0; i < N_CROC; i++) {
+                        printCroc(croc[i].x, croc[i].y, croc[i].direction); 
+                    }
 
-        Frog tempFrog; 
+                    refresh();
+                } 
+            }
+            else if (type == MSG_FROG)
+            {
+                Frog tempFrog; 
 
-        if (read(game->pipeFd[0], &tempFrog, sizeof(Frog)) > 0) {
-            werase(stdscr); 
-            printFrog(tempFrog.x, tempFrog.y); 
-            refresh(); 
+                read(game->pipeFd[0], &tempFrog, sizeof(Frog));
+                //werase(stdscr); 
+                printFrog(tempFrog.x, tempFrog.y); 
+                
+                for (int i = 0; i < N_CROC; i++) {
+                    printCroc(croc[i].x, croc[i].y, croc[i].direction);
+                }
+                
+                refresh(); 
+                
+            }
         }
     }
-
 }
 
 void stopGame(Game *game) {

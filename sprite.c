@@ -45,12 +45,16 @@ void printFrog(int x, int y) {
         {' ', '/', 'o', ' ', 'o', '\\', ' '}, 
         {'(', ' ', ' ', '^', ' ', ' ', ')'},
         {'(', ' ', ' ', ' ', ' ', ' ', ')'},
-        {' ', '\\', ' ', ' ', ' ', '/', ' '}
+        {' ', '/', ' ', ' ', ' ', '\\', ' '}
     };
+
+    int maxY, maxX; 
+    getmaxyx(stdscr, maxY, maxX); 
 
     for (int i = 0; i < FROG_HEIGHT; i++) {
         for (int j = 0; j < FROG_LENGTH; j++) {
-            mvaddch(y + i, x + j, frogSprite[i][j]);
+            if(y+i < maxY && x+j < maxX)
+                mvaddch(y + i, x + j, frogSprite[i][j]);
         }
     }
 }

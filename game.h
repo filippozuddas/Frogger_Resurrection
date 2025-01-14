@@ -6,6 +6,7 @@
 #include "map.h"
 #include "sprite.h"
 #include "colors.h"
+#include "struct.h"
 
 typedef struct {
     unsigned int isRunning; 
