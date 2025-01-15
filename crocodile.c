@@ -1,8 +1,5 @@
 #include "crocodile.h"
 
-// Definisci una distanza minima di sicurezza tra coccodrilli (per evitare sovrapposizioni)
-#define MIN_CROC_DISTANCE 8
-
 int flowDirection[N_FLOW];
 int flowSpeed[N_FLOW];
 

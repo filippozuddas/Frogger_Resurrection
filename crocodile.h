@@ -19,6 +19,7 @@
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
 #define CROC_LENGHT 21
+#define MIN_CROC_DISTANCE 8
 
 typedef struct {
     pid_t pid;
