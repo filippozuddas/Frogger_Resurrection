@@ -21,15 +21,6 @@
 #define CROC_LENGHT 21
 #define MIN_CROC_DISTANCE 8
 
-typedef struct {
-    pid_t pid;
-    int x;
-    int y;
-    //int isVisible;
-    int speed; 
-    int direction; 
-} Crocodile;
-
 extern const char *crocSprite[CROC_HEIGHT][CROC_LENGHT];
 extern int flowDirection[N_FLOW]; 
 extern int flowSpeed[N_FLOW]; 

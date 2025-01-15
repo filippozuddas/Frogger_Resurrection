@@ -29,6 +29,7 @@ void initGame(Game *game) {
     fcntl(game->pipeFd[0], F_SETFL, flags | O_NONBLOCK);
 }
 
+
 void runGame(Game* game) {
 
     Crocodile tempCroc;
@@ -51,7 +52,7 @@ void runGame(Game* game) {
             break;
         }
 
-        if (read(game->pipeFd[0], &type, sizeof(type)) > 0) {
+        while (read(game->pipeFd[0], &type, sizeof(type)) > 0) {
             if(type == MSG_CROC){
                 if (read(game->pipeFd[0], &tempCroc, sizeof(Crocodile)) > 0) {
                     // Trova l'indice corrispondente al pid o a un posto vuoto
@@ -105,8 +106,11 @@ void runGame(Game* game) {
         printFrog(game->frog.x, game->frog.y);
 
         refresh();
+
+        //usleep(16667);
     }
 }
+
 
 void stopGame(Game *game) {
     //Termina tutti i processi figli
