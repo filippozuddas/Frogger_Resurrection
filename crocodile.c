@@ -112,7 +112,6 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
         // MessageType type = MSG_CROC;
         // write(pipeFd[1], &type, sizeof(type)); 
         write(pipeFd[1], &croc->info, sizeof(Informations));
-        //usleep(croc->speed * 10000);
-        usleep(100000);
+        usleep(croc->info.speed * 10000);
     }
 }

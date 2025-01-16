@@ -8,13 +8,6 @@
 #include "colors.h"
 #include "struct.h"
 
-typedef struct {
-    unsigned int isRunning; 
-    int pipeFd[2]; 
-    Crocodile crocodile[N_CROC]; 
-    Frog frog; 
-} Game;
-
 void initGame(Game *game); 
 void runGame(Game *game); 
 void stopGame(Game *game); 

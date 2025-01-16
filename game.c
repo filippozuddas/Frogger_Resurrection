@@ -9,8 +9,8 @@ void initGame(Game *game) {
     cbreak();
     noecho();
     curs_set(0);
-    nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
+    nodelay(stdscr, TRUE);
     start_color();
 
     setColors(); 
@@ -32,13 +32,14 @@ void initGame(Game *game) {
 
 void runGame(Game* game) {
 
+
     Crocodile tempCroc;
     Frog tempFrog; 
     //MessageType type;
     Informations info;
 
     createCroc(game->crocodile, game->pipeFd);
-    createFrog(game->frog, game->pipeFd);
+    createFrog(game->frog, game->pipeFd, game);
     tempFrog = game->frog;
 
     close(game->pipeFd[1]);
@@ -47,12 +48,12 @@ void runGame(Game* game) {
     memset(croc, 0, sizeof(croc)); 
 
     while (game->isRunning) {
-        int ch = getch();
+        /*int ch = getch();
         
         // Esci con 'q' o 'Q'
         if (ch == 'q' || ch == 'Q') {
             break;
-        }
+        }*/
 
         while (read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
             if(info.ID == 1) {
