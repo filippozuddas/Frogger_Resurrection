@@ -47,7 +47,7 @@ void createCroc(Crocodile *croc, int *pipeFd) {
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
             // Decidiamo la y in base al flusso corrente
-            int spawnY = (LINES - 10) - (flow * CROC_HEIGHT);
+            int spawnY = (LINES - 8) - (flow * CROC_HEIGHT);
 
             // Trova x casuale valida
             int spawnX = 0;

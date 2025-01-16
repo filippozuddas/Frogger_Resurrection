@@ -12,9 +12,5 @@
 #include <string.h>
 #include "struct.h"
 
-
-#define FROG_LENGTH 7
-#define FROG_HEIGHT 4
-
 void createFrog(Frog frog, int *pipeFd);
-void moveFrog(Frog frog, int *pipeFd); 
+void inputHandler(Frog frog, int *pipeFd); 

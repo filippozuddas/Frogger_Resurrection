@@ -7,6 +7,7 @@
 #include "sprite.h"
 #include "colors.h"
 #include "struct.h"
+#include "map.h"
 
 void initGame(Game *game); 
 void runGame(Game *game); 

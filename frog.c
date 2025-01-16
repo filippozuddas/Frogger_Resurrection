@@ -18,12 +18,12 @@ void createFrog(Frog frog, int *pipeFd) {
     }
     else if(pidFrog == 0) {
         close(pipeFd[0]); 
-        moveFrog(frog, pipeFd); 
+        inputHandler(frog, pipeFd); 
         exit(0); 
     }
 }
 
-void moveFrog(Frog frog, int *pipeFd) {
+void inputHandler(Frog frog, int *pipeFd) {
     while(1) {
         int input = getch(); 
         
@@ -48,6 +48,8 @@ void moveFrog(Frog frog, int *pipeFd) {
             case KEY_LEFT:
                 frog.info.x = (frog.info.x > 0) ? frog.info.x - FROG_LENGTH : frog.info.x;
                 break;
+
+            /* da implementare '' per le granate */
         }
         
         write(pipeFd[1], &frog.info, sizeof(Informations)); 

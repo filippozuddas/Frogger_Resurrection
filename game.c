@@ -27,6 +27,9 @@ void initGame(Game *game) {
 
     int flags = fcntl(game->pipeFd[0], F_GETFL, 0);
     fcntl(game->pipeFd[0], F_SETFL, flags | O_NONBLOCK);
+
+    inizializza_mappa();
+    disegna_mappa();
 }
 
 
@@ -35,11 +38,10 @@ void runGame(Game* game) {
 
     Crocodile tempCroc;
     Frog tempFrog; 
-    //MessageType type;
     Informations info;
 
     createCroc(game->crocodile, game->pipeFd);
-    createFrog(game->frog, game->pipeFd, game);
+    createFrog(game->frog, game->pipeFd);
     tempFrog = game->frog;
 
     close(game->pipeFd[1]);
@@ -75,6 +77,8 @@ void runGame(Game* game) {
 
         werase(stdscr); 
         //clear();
+
+        disegna_mappa();
 
         for (int i = 0; i < N_CROC; i++) {
             printCroc(croc[i].info.x, croc[i].info.y, croc[i].info.direction);

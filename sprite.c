@@ -48,7 +48,7 @@ void printFrog(int x, int y) {
         {' ', '/', ' ', ' ', ' ', '\\', ' '}
     };
 
-    init_pair(1, COLOR_BLACK, COLOR_WHITE);
+    init_pair(1, COLOR_BLACK, COLOR_GREEN);
 
     int maxY, maxX; 
     getmaxyx(stdscr, maxY, maxX); 
