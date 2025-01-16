@@ -11,15 +11,15 @@ typedef struct {
     int direction; 
     int speed; 
     int ID;   // 0 = frog, 1 = croc
-} Coordinates;
+    pid_t pid;
+} Informations;
 
 typedef struct {
-    pid_t pid;
-    Coordinates coords;
+    Informations info;
 } Crocodile;
 
 typedef struct Frog {
-    Coordinates coords;
+    Informations info;
     int lives; 
     int score; 
     int isOnCroc; 

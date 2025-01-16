@@ -16,5 +16,5 @@
 #define FROG_LENGTH 7
 #define FROG_HEIGHT 4
 
-void createFrog(Frog *frog, int pipeFd[]);
-void moveFrog(Frog *frog, int pipeFd[]); 
+void createFrog(Frog frog, int *pipeFd);
+void moveFrog(Frog frog, int *pipeFd); 

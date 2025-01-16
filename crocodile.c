@@ -10,9 +10,9 @@ int flowSpeed[N_FLOW];
 static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
     for (int i = 0; i < count; i++) {
         // Se hanno la stessa riga
-        if (crocodiles[i].coords.y == y_new) {
+        if (crocodiles[i].info.y == y_new) {
             // Calcola distanza in base a x
-            int diff = abs(x_new - crocodiles[i].coords.x); 
+            int diff = abs(x_new - crocodiles[i].info.x); 
             // Se si sovrappongono o sono troppo vicini
             if (diff < (CROC_LENGHT + MIN_CROC_DISTANCE)) {
                 return 0; // posizione non valida
@@ -61,11 +61,12 @@ void createCroc(Crocodile *croc, int *pipeFd) {
             }
 
             //inizializzo i valori prima della fork 
-            tempCroc.coords.x = spawnX;
-            tempCroc.coords.y = spawnY;
+            tempCroc.info.x = spawnX;
+            tempCroc.info.y = spawnY;
             //tempCroc.isVisible = 1;
-            tempCroc.coords.direction = flowDirection[flow]; 
-            tempCroc.coords.speed = flowSpeed[flow]; 
+            tempCroc.info.direction = flowDirection[flow]; 
+            tempCroc.info.speed = flowSpeed[flow]; 
+            tempCroc.info.ID = 1;
 
             pid_t pid = fork();
             if (pid < 0) {
@@ -81,7 +82,7 @@ void createCroc(Crocodile *croc, int *pipeFd) {
                 exit(0);
             }
             else {
-                tempCroc.pid = pid; 
+                tempCroc.info.pid = pid; 
                 croc[crocID] = tempCroc; 
 
                 crocID++;
@@ -93,24 +94,24 @@ void createCroc(Crocodile *croc, int *pipeFd) {
 
 void moveCroc(Crocodile *croc, int *pipeFd) {
     while(1){
-        if (croc->coords.direction == 0) {
-            croc->coords.x++; 
-            if (croc->coords.x >= COLS + 1 + CROC_LENGHT){
+        if (croc->info.direction == 0) {
+            croc->info.x++; 
+            if (croc->info.x >= COLS + 1 + CROC_LENGHT){
                 sleep(rand() % (3 - 2 + 1) + 2);
-                croc->coords.x = 0 - CROC_LENGHT;
+                croc->info.x = 0 - CROC_LENGHT;
             }
         }
         else {
-            croc->coords.x--; 
-            if(croc->coords.x < -2 -CROC_LENGHT) {
+            croc->info.x--; 
+            if(croc->info.x < -2 -CROC_LENGHT) {
                 sleep(rand() % (3 - 2 + 1) + 2); 
-                croc->coords.x = COLS - 1 + CROC_LENGHT;
+                croc->info.x = COLS - 1 + CROC_LENGHT;
             }
         }
 
         // MessageType type = MSG_CROC;
         // write(pipeFd[1], &type, sizeof(type)); 
-        write(pipeFd[1], &croc->coords, sizeof(Coordinates));
+        write(pipeFd[1], &croc->info, sizeof(Informations));
         //usleep(croc->speed * 10000);
         usleep(100000);
     }

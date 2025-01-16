@@ -34,10 +34,12 @@ void runGame(Game* game) {
 
     Crocodile tempCroc;
     Frog tempFrog; 
-    MessageType type;
+    //MessageType type;
+    Informations info;
 
     createCroc(game->crocodile, game->pipeFd);
-    createFrog(&(game->frog), game->pipeFd); 
+    createFrog(game->frog, game->pipeFd);
+    tempFrog = game->frog;
 
     close(game->pipeFd[1]);
 
@@ -52,62 +54,36 @@ void runGame(Game* game) {
             break;
         }
 
-        while (read(game->pipeFd[0], &type, sizeof(type)) > 0) {
-            if(type == MSG_CROC){
-                if (read(game->pipeFd[0], &tempCroc, sizeof(Crocodile)) > 0) {
-                    // Trova l'indice corrispondente al pid o a un posto vuoto
-                    int found = -1;
-                    for (int i = 0; i < N_CROC; i++) {
-                        if (croc[i].pid == tempCroc.pid || croc[i].pid == 0) {
-                            found = i;
-                            break;
-                        }
-                    }
-
-                    if (found != -1) {
-                        croc[found] = tempCroc;
-                    }
-
-                    // non so perchè funziona meglio di clear()
-                    /*
-                    werase(stdscr);
-                    
-                    for (int i = 0; i < N_CROC; i++) {
-                        printCroc(croc[i].x, croc[i].y, croc[i].direction); 
-                    }
-
-                    refresh();
-                    */
-                } 
-            }
-            else if (type == MSG_FROG)
-            {
-               
-                if(read(game->pipeFd[0], &tempFrog, sizeof(Frog)) > 0);
-                    game->frog = tempFrog;
-                //werase(stdscr); 
-                /*printFrog(tempFrog.x, tempFrog.y); 
-                
+        while (read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
+            if(info.ID == 1) {
+                int found = -1;
                 for (int i = 0; i < N_CROC; i++) {
-                    printCroc(croc[i].x, croc[i].y, croc[i].direction);
+                    if (croc[i].info.pid == info.pid || croc[i].info.pid == 0) {
+                        found = i;
+                        break;
+                    }
                 }
-                
-                refresh(); 
-                */
-                
+                if (found != -1) {
+                    croc[found].info = info;
+                }
+            }
+            if(info.ID == 0) {
+                tempFrog.info = info;
             }
         }
+
         werase(stdscr); 
+        //clear();
 
         for (int i = 0; i < N_CROC; i++) {
-            printCroc(croc[i].x, croc[i].y, croc[i].direction);
+            printCroc(croc[i].info.x, croc[i].info.y, croc[i].info.direction);
         }
 
-        printFrog(game->frog.x, game->frog.y);
+        printFrog(tempFrog.info.x, tempFrog.info.y);
+        
+        wrefresh(stdscr);
 
-        refresh();
-
-        //usleep(16667);
+        usleep(16000);
     }
 }
 
@@ -115,12 +91,12 @@ void runGame(Game* game) {
 void stopGame(Game *game) {
     //Termina tutti i processi figli
     for (int i = 0; i < N_CROC; i++) {
-        kill(game->crocodile[i].pid, SIGTERM);
+        kill(game->crocodile[i].info.pid, SIGTERM);
     }
 
     // Aspetta che tutti i processi figli terminino
     for (int i = 0; i < N_CROC; i++) {
-        waitpid(game->crocodile[i].pid, NULL, 0);
+        waitpid(game->crocodile[i].info.pid, NULL, 0);
     }
     
     endwin(); 
