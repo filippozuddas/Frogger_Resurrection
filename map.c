@@ -1,4 +1,4 @@
-#include <ncurses.h>
+#include <curses.h>
 #include "map.h"
 
 // Dimensioni dello schermo
@@ -6,11 +6,6 @@
 #define ALTEZZA LINES
 
 void inizializza_mappa() {
-    initscr();     
-    noecho();             
-    curs_set(0);      
-    start_color();    
-
     // Inizializzazione colori
     init_pair(1, COLOR_BLACK, COLOR_GREEN);  // Marciapiede e tane
     init_pair(2, COLOR_BLACK, COLOR_BLUE);   // Fiume
@@ -46,6 +41,3 @@ void disegna_mappa() {
     }
 }
 
-void chiudi_mappa() {
-    endwin(); // Chiude ncurses
-}

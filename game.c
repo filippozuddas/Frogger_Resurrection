@@ -1,6 +1,5 @@
 #include "game.h"
 #include <signal.h>
-#include <locale.h>
 #include <fcntl.h>
 
 
@@ -15,8 +14,6 @@ void initGame(Game *game) {
 
     setColors(); 
     srand(time(NULL)); 
-
-    setlocale(LC_ALL, ""); 
 
     game->isRunning = 1; 
 
@@ -86,7 +83,7 @@ void runGame(Game* game) {
 
         printFrog(tempFrog.info.x, tempFrog.info.y);
         
-        wrefresh(stdscr);
+        refresh();
 
         usleep(16000);
     }

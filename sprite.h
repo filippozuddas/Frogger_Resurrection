@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ncurses.h>
+#include <curses.h>
 #include "crocodile.h"
 #include "frog.h"
 #include "colors.h"
