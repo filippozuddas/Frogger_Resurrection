@@ -1,7 +1,8 @@
 #include "frog.h"
 
 void createFrog(Frog frog, int *pipeFd) {
-    //inizializzazione frog
+    /* inizializzazione frog */
+    /* le coordinate x e y si riferiscono all'angolo in alto a sinistra della sprite */
     frog.info.x = (COLS - 1)/2; 
     frog.info.y = LINES - 4; 
     frog.info.ID = 0;
@@ -56,4 +57,12 @@ void inputHandler(Frog frog, int *pipeFd) {
 
         usleep(16000);
     }
+}
+
+int checkCollision(const Informations frogInfo, const Informations crocInfo) {
+    if (frogInfo.x + FROG_LENGTH <= crocInfo.x) return 0; 
+    if (frogInfo.x >= crocInfo.x + CROC_LENGHT) return 0; 
+    if (frogInfo.y + FROG_HEIGHT <= crocInfo.y) return 0;
+    if (frogInfo.y >= crocInfo.y + CROC_HEIGHT) return 0;
+    return 1;
 }

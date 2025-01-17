@@ -72,6 +72,44 @@ void runGame(Game* game) {
             }
         }
 
+        // Esempio di collision check e spostamento nel padre
+        // (Da integrare in runGame, dopo aver letto i dati da pipe)
+        int frogOnIndex = -1; // -1 se non su coccodrillo
+        for (int i = 0; i < N_CROC; i++) {
+            if (checkCollision(tempFrog.info, croc[i].info)) {
+                frogOnIndex = i;
+                break;
+            }
+        }
+
+        // Se hai trovato un coccodrillo compatibile
+        if (frogOnIndex != -1) {
+            tempFrog.isOnCroc = 1;
+            tempFrog.onCrocIdx = frogOnIndex;
+        } else {
+            tempFrog.isOnCroc = 0;
+        }
+
+        // Se la rana risulta su un coccodrillo, spostala insieme ad esso
+        if (tempFrog.isOnCroc) {
+            int idx = tempFrog.onCrocIdx;
+            // Logica di “frog che si muove col coccodrillo”
+            if (croc[idx].info.direction == 0) {
+                tempFrog.info.x += croc[idx].info.speed;
+            } else {
+                tempFrog.info.x -= croc[idx].info.speed;
+            }
+            // Controlla se cade
+            if (tempFrog.info.x < 0 || tempFrog.info.x >= COLS) {
+                tempFrog.isOnCroc = 0; 
+                // Esempio: togli vita
+                tempFrog.lives -= 1;
+                // Riportala al punto iniziale
+                tempFrog.info.x = (COLS - 1)/2; 
+                tempFrog.info.y = LINES - 4;
+            }
+        }
+
         werase(stdscr); 
         //clear();
 

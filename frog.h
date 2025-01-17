@@ -14,3 +14,4 @@
 
 void createFrog(Frog frog, int *pipeFd);
 void inputHandler(Frog frog, int *pipeFd); 
+int checkCollision(const Informations frogInfo, const Informations crocInfo);

@@ -30,6 +30,7 @@ typedef struct Frog {
     int lives; 
     int score; 
     int isOnCroc; 
+    int onCrocIdx;
 }Frog; 
 
 typedef struct {

@@ -42,13 +42,6 @@ void printCroc(int x, int y, int direction) {
 }
 
 void printFrog(int x, int y) {
-    /*char frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
-        {' ', '/', 'o', ' ', 'o', '\\', ' '}, 
-        {'(', ' ', ' ', '^', ' ', ' ', ')'},
-        {'(', ' ', ' ', ' ', ' ', ' ', ')'},
-        {' ', '/', ' ', ' ', ' ', '\\', ' '}
-    };*/
-
     wchar_t frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
         {L'n', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'n'},
         {L' ', L' ', L' ', L'▄', L' ', L' ', L' ', L'▄', L' ', L' '},
