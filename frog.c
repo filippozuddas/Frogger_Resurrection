@@ -41,12 +41,12 @@ void inputHandler(Frog frog, int *pipeFd) {
             case 'd':
             case 'D':
             case KEY_RIGHT:
-                frog.info.x = (frog.info.x < COLS - 1) ? frog.info.x + FROG_LENGTH : frog.info.x;
+                frog.info.x = (frog.info.x < COLS - 1) ? frog.info.x + 1 : frog.info.x;
                 break;
             case 'a':
             case 'A':
             case KEY_LEFT:
-                frog.info.x = (frog.info.x > 0) ? frog.info.x - FROG_LENGTH : frog.info.x;
+                frog.info.x = (frog.info.x > 0) ? frog.info.x - 1 : frog.info.x;
                 break;
 
             /* da implementare '' per le granate */

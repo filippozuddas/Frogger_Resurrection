@@ -9,7 +9,7 @@
 #define CROC_LENGHT 21
 #define MIN_CROC_DISTANCE 8
 
-#define FROG_LENGTH 7
+#define FROG_LENGTH 10
 #define FROG_HEIGHT 4
 
 typedef struct {

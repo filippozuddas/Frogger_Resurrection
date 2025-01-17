@@ -42,11 +42,25 @@ void printCroc(int x, int y, int direction) {
 }
 
 void printFrog(int x, int y) {
-    char frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
+    /*char frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
         {' ', '/', 'o', ' ', 'o', '\\', ' '}, 
         {'(', ' ', ' ', '^', ' ', ' ', ')'},
         {'(', ' ', ' ', ' ', ' ', ' ', ')'},
         {' ', '/', ' ', ' ', ' ', '\\', ' '}
+    };*/
+
+    wchar_t frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
+        {L'n', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'n'},
+        {L' ', L' ', L' ', L'▄', L' ', L' ', L' ', L'▄', L' ', L' '},
+        {L' ', L' ', L' ', L' ', L'▄', L'▄', L' ', L' ', L' ', L' '},
+        {L'n', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'n'}
+    };
+
+    short colors[FROG_HEIGHT][FROG_LENGTH] = {
+        {0, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, 0},
+        {BLACK_BLACK, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, BLACK_BLACK},
+        {BLACK_BLACK, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_PINK_FROG, GREEN_PINK_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK},
+        {0, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, 0}
     };
 
     init_pair(1, COLOR_BLACK, COLOR_GREEN);
@@ -54,14 +68,15 @@ void printFrog(int x, int y) {
     int maxY, maxX; 
     getmaxyx(stdscr, maxY, maxX); 
 
-    attron(1); 
     for (int i = 0; i < FROG_HEIGHT; i++) {
         for (int j = 0; j < FROG_LENGTH; j++) {
-            if(y+i < maxY && x+j < maxX)
-                mvaddch(y + i, x + j, frogSprite[i][j]);
+            if(frogSprite[i][j] != L'n'){
+                CHANGE_COLOR(colors[i][j]);
+                mvprintw(y + i, x + j, "%lc", frogSprite[i][j]);
+            }
         }
-    }
-    attroff(1); 
+
+    } 
 }
 
 

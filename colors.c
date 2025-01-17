@@ -6,6 +6,8 @@ void initColors(short c, short r, short g, short b) {
 
 void setColors() {
 
+
+    /* Crocodile */
     initColors(CROC_GREEN, 173,255,47);
     initColors(CROC_WHITE, 255,250,250); 
     initColors(CROC_BLACK, 0, 0, 0); 
@@ -20,4 +22,15 @@ void setColors() {
     init_pair(WHITE_GREEN, CROC_WHITE, CROC_GREEN); 
     init_pair(BG_BLACK, COLOR_BLUE, CROC_BLACK); 
     //init_pair(BG_BG, 0, 0); 
+
+
+    /* Frog */
+    initColors(FROG_GREEN, 34, 177, 76);
+    initColors(FROG_PINK, 255, 163, 177);
+
+    init_pair(GREEN_BLACK_FROG, FROG_GREEN, COLOR_BLACK); 
+    init_pair(GREEN_GREEN_FROG, FROG_GREEN, FROG_GREEN); 
+    init_pair(GREEN_PINK_FROG, FROG_GREEN, FROG_PINK); 
+
+    
 }
