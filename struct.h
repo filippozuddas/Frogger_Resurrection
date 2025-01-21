@@ -31,11 +31,13 @@ typedef struct Frog {
     int score; 
     int isOnCroc; 
     int onCrocIdx;
+    int onCrocOffset; 
 }Frog; 
 
 typedef struct {
     unsigned int isRunning; 
     int pipeFd[2]; 
+    int mainToEntPipe[2];
     Crocodile crocodile[N_CROC]; 
     Frog frog; 
 } Game;

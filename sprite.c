@@ -56,8 +56,6 @@ void printFrog(int x, int y) {
         {0, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, 0}
     };
 
-    init_pair(1, COLOR_BLACK, COLOR_GREEN);
-
     int maxY, maxX; 
     getmaxyx(stdscr, maxY, maxX); 
 

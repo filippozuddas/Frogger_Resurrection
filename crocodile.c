@@ -25,7 +25,7 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
 
 void createCroc(Crocodile *croc, int *pipeFd) {
 
-    int crocID = 0;          // Conta i coccodrilli totali
+    int crocID = 1;          // Conta i coccodrilli totali
     int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
 
     Crocodile tempCroc; 
@@ -66,7 +66,7 @@ void createCroc(Crocodile *croc, int *pipeFd) {
             //tempCroc.isVisible = 1;
             tempCroc.info.direction = flowDirection[flow]; 
             tempCroc.info.speed = flowSpeed[flow]; 
-            tempCroc.info.ID = 1;
+            tempCroc.info.ID = crocID;
 
             pid_t pid = fork();
             if (pid < 0) {
@@ -83,7 +83,7 @@ void createCroc(Crocodile *croc, int *pipeFd) {
             }
             else {
                 tempCroc.info.pid = pid; 
-                croc[crocID] = tempCroc; 
+                croc[crocID-1] = tempCroc; 
 
                 crocID++;
                 placedCrocCount++;

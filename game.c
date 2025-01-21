@@ -17,13 +17,17 @@ void initGame(Game *game) {
 
     game->isRunning = 1; 
 
-    if(pipe(game->pipeFd) < 0) {
+    if(pipe(game->pipeFd) < 0 || pipe(game->mainToEntPipe) < 0) {
         perror("pipe creation error"); 
         exit(1); 
     }
 
-    int flags = fcntl(game->pipeFd[0], F_GETFL, 0);
-    fcntl(game->pipeFd[0], F_SETFL, flags | O_NONBLOCK);
+    //adesso funziona anche senza pipe non bloccante (non so perchè)
+    int flags1 = fcntl(game->pipeFd[0], F_GETFL, 0);
+    fcntl(game->pipeFd[0], F_SETFL, flags1 | O_NONBLOCK);
+
+    int flags2 = fcntl(game->mainToEntPipe[0], F_GETFL, 0);
+    fcntl(game->mainToEntPipe[0], F_SETFL, flags2 | O_NONBLOCK);
 
     inizializza_mappa();
     disegna_mappa();
@@ -31,89 +35,43 @@ void initGame(Game *game) {
 
 
 void runGame(Game* game) {
+ 
+    createCroc(game->crocodile, game->pipeFd);
+    createFrog(&(game->frog), game->pipeFd, game->mainToEntPipe);
 
-
-    Crocodile tempCroc;
-    Frog tempFrog; 
+    Frog tempFrog = game->frog;
+    Crocodile *croc = game->crocodile;
     Informations info;
 
-    createCroc(game->crocodile, game->pipeFd);
-    createFrog(game->frog, game->pipeFd);
-    tempFrog = game->frog;
-
     close(game->pipeFd[1]);
+    close(game->mainToEntPipe[0]);
 
-    Crocodile croc[N_CROC]; 
-    memset(croc, 0, sizeof(croc)); 
+    int playerCrocIdx = 0;
 
     while (game->isRunning) {
-        /*int ch = getch();
+        if(read(game->pipeFd[0], &info, sizeof(Informations)) > 0);
         
-        // Esci con 'q' o 'Q'
-        if (ch == 'q' || ch == 'Q') {
-            break;
-        }*/
+        if(info.ID == 0) {
+            tempFrog.info = info;
+        }
+        if(info.ID >= 1) {
+            croc[info.ID - 1].info = info; 
+        }
+        
 
-        while (read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
-            if(info.ID == 1) {
-                int found = -1;
-                for (int i = 0; i < N_CROC; i++) {
-                    if (croc[i].info.pid == info.pid || croc[i].info.pid == 0) {
-                        found = i;
-                        break;
-                    }
-                }
-                if (found != -1) {
-                    croc[found].info = info;
-                }
-            }
-            if(info.ID == 0) {
-                tempFrog.info = info;
-            }
+        playerCrocIdx = isFrogOnCroc(&tempFrog, croc);
+        if (playerCrocIdx > 0) {
+            write(game->mainToEntPipe[1], &croc[playerCrocIdx-1].info, sizeof(Informations));
         }
 
-        // Esempio di collision check e spostamento nel padre
-        // (Da integrare in runGame, dopo aver letto i dati da pipe)
-        int frogOnIndex = -1; // -1 se non su coccodrillo
-        for (int i = 0; i < N_CROC; i++) {
-            if (checkCollision(tempFrog.info, croc[i].info)) {
-                frogOnIndex = i;
-                break;
-            }
-        }
-
-        // Se hai trovato un coccodrillo compatibile
-        if (frogOnIndex != -1) {
-            tempFrog.isOnCroc = 1;
-            tempFrog.onCrocIdx = frogOnIndex;
-        } else {
-            tempFrog.isOnCroc = 0;
-        }
-
-        // Se la rana risulta su un coccodrillo, spostala insieme ad esso
-        if (tempFrog.isOnCroc) {
-            int idx = tempFrog.onCrocIdx;
-            // Logica di “frog che si muove col coccodrillo”
-            if (croc[idx].info.direction == 0) {
-                tempFrog.info.x += croc[idx].info.speed;
-            } else {
-                tempFrog.info.x -= croc[idx].info.speed;
-            }
-            // Controlla se cade
-            if (tempFrog.info.x < 0 || tempFrog.info.x >= COLS) {
-                tempFrog.isOnCroc = 0; 
-                // Esempio: togli vita
-                tempFrog.lives -= 1;
-                // Riportala al punto iniziale
-                tempFrog.info.x = (COLS - 1)/2; 
-                tempFrog.info.y = LINES - 4;
-            }
-        }
 
         werase(stdscr); 
-        //clear();
 
         disegna_mappa();
+
+        mvprintw(1, 1, "Player's lives: %d", tempFrog.lives);
+        mvprintw(1, 20, "LINES: %d, COLS: %d", LINES, COLS);
+        mvprintw(1, 50, "x = %d, y = %d", tempFrog.info.x, tempFrog.info.y);
 
         for (int i = 0; i < N_CROC; i++) {
             printCroc(croc[i].info.x, croc[i].info.y, croc[i].info.direction);
@@ -123,7 +81,7 @@ void runGame(Game* game) {
         
         refresh();
 
-        usleep(16000);
+        usleep(1000);
     }
 }
 

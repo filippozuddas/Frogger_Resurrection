@@ -12,6 +12,7 @@
 #include <string.h>
 #include "struct.h"
 
-void createFrog(Frog frog, int *pipeFd);
-void inputHandler(Frog frog, int *pipeFd); 
-int checkCollision(const Informations frogInfo, const Informations crocInfo);
+void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe);
+void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe); 
+int checkCollision(Informations frogInfo, Informations crocInfo);
+int isFrogOnCroc(Frog *frog, Crocodile *croc);

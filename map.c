@@ -30,14 +30,14 @@ void disegna_mappa() {
     disegna_blocco(4, 0, ALTEZZA - 8, LARGHEZZA, 2);
 
     // Disegna la sponda superiore (argine)
-    disegna_blocco(2, 0, 12, LARGHEZZA, 3);
+    disegna_blocco(10, 0, 4, LARGHEZZA, 3);
 
     // Disegna 5 tane equidistanti
     int larghezza_tana = 10;
     int spaziatura_tane = (LARGHEZZA - 5 * larghezza_tana) / 6; // Spazio tra tane
     for (int i = 0; i < 5; i++) {
         int startx = spaziatura_tane + i * (larghezza_tana + spaziatura_tane);
-        disegna_blocco(2, startx, 4, larghezza_tana, 1);
+        disegna_blocco(6, startx, 4, larghezza_tana, 1);
     }
 }
 
