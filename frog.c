@@ -24,9 +24,9 @@ void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe) {
 }
 
 void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe) { 
-    Informations crocInfo;
-
     while(1) {
+
+        read(mainToEntPipe[0], &frog->info, sizeof(Informations));
 
         int input = getch(); 
         
@@ -57,13 +57,8 @@ void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe) {
             /* da implementare '' per le granate */
         }
         
-        if(read(mainToEntPipe[0], &crocInfo, sizeof(Informations)) > 0){
-            frog->info.x = crocInfo.x ;//+ frog->onCrocOffset; 
-            //write(pipeFd[1], &frog->info, sizeof(Informations));
-            //usleep(16000);
-            //continue; // Salta il resto del ciclo
-            
-        }
+           
+
 
         write(pipeFd[1], &frog->info, sizeof(Informations)); 
 
@@ -83,14 +78,14 @@ int checkCollision(Informations frogInfo, Informations crocInfo) {
     return 0; 
 }
 
-int isFrogOnCroc(Frog *frog, Crocodile *croc) {
+int isFrogOnCroc(Game *game) {
     for (int i = 0; i < N_CROC; i++) {
-        if(checkCollision(frog->info, croc[i].info)) {
-            frog->onCrocOffset = frog->info.x - croc[i].info.x;
-            frog->isOnCroc = 1; 
+        if(checkCollision(game->frog.info, game->crocodile[i].info)) {
+            game->frog.onCrocOffset = game->frog.info.x - game->crocodile[i].info.x;
+            game->frog.isOnCroc = 1; 
             return i + 1; 
         }
     }
-    frog->isOnCroc = 0; 
+    game->frog.isOnCroc = 0; 
     return 0; 
 }

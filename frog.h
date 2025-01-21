@@ -15,4 +15,4 @@
 void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe);
 void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe); 
 int checkCollision(Informations frogInfo, Informations crocInfo);
-int isFrogOnCroc(Frog *frog, Crocodile *croc);
+int isFrogOnCroc(Game *game);

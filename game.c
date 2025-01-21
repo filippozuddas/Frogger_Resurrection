@@ -39,7 +39,7 @@ void runGame(Game* game) {
     createCroc(game->crocodile, game->pipeFd);
     createFrog(&(game->frog), game->pipeFd, game->mainToEntPipe);
 
-    Frog tempFrog = game->frog;
+    Frog *tempFrog = &game->frog;
     Crocodile *croc = game->crocodile;
     Informations info;
 
@@ -49,35 +49,43 @@ void runGame(Game* game) {
     int playerCrocIdx = 0;
 
     while (game->isRunning) {
-        if(read(game->pipeFd[0], &info, sizeof(Informations)) > 0);
-        
-        if(info.ID == 0) {
-            tempFrog.info = info;
-        }
-        if(info.ID >= 1) {
-            croc[info.ID - 1].info = info; 
+        if(read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
+            if(info.ID == 0) {
+                tempFrog->info = info;
+            }
+            if(info.ID >= 1) {
+                croc[info.ID - 1].info = info; 
+
+                if (playerCrocIdx == info.ID && tempFrog->isOnCroc){
+                    tempFrog->info.x = info.x + tempFrog->onCrocOffset;
+                }
+            }
         }
         
 
-        playerCrocIdx = isFrogOnCroc(&tempFrog, croc);
+        playerCrocIdx = isFrogOnCroc(game);
         if (playerCrocIdx > 0) {
-            write(game->mainToEntPipe[1], &croc[playerCrocIdx-1].info, sizeof(Informations));
+            tempFrog->isOnCroc = 1; 
         }
+        else {
+            tempFrog->isOnCroc = 0; 
+        }
+        write(game->mainToEntPipe[1], &game->frog.info, sizeof(Informations));
 
 
         werase(stdscr); 
 
         disegna_mappa();
 
-        mvprintw(1, 1, "Player's lives: %d", tempFrog.lives);
+        mvprintw(1, 1, "Player's lives: %d", tempFrog->lives);
         mvprintw(1, 20, "LINES: %d, COLS: %d", LINES, COLS);
-        mvprintw(1, 50, "x = %d, y = %d", tempFrog.info.x, tempFrog.info.y);
+        mvprintw(1, 50, "x = %d, y = %d", tempFrog->info.x, tempFrog->info.y);
 
         for (int i = 0; i < N_CROC; i++) {
             printCroc(croc[i].info.x, croc[i].info.y, croc[i].info.direction);
         }
 
-        printFrog(tempFrog.info.x, tempFrog.info.y);
+        printFrog(tempFrog->info.x, tempFrog->info.y);
         
         refresh();
 
