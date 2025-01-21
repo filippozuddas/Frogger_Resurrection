@@ -3,7 +3,7 @@
 void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe) {
     /* inizializzazione frog */
     /* le coordinate x e y si riferiscono all'angolo in alto a sinistra della sprite */
-    frog->info.x = (COLS - 1)/2 - 4; 
+    frog->info.x = ((COLS - 1) / 2) - 4; 
     frog->info.y = LINES - 4; 
     frog->info.ID = 0;
     frog->lives = 3; 
@@ -87,5 +87,12 @@ int isFrogOnCroc(Game *game) {
         }
     }
     game->frog.isOnCroc = 0; 
+    return 0; 
+}
+
+int isFrogOnRiver(Game *game) {
+    if(game->frog.info.y < LINES - 5 && game->frog.info.y > 10) {
+        return 1;
+    }
     return 0; 
 }

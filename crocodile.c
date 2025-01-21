@@ -63,7 +63,6 @@ void createCroc(Crocodile *croc, int *pipeFd) {
             //inizializzo i valori prima della fork 
             tempCroc.info.x = spawnX;
             tempCroc.info.y = spawnY;
-            //tempCroc.isVisible = 1;
             tempCroc.info.direction = flowDirection[flow]; 
             tempCroc.info.speed = flowSpeed[flow]; 
             tempCroc.info.ID = crocID;
@@ -74,7 +73,6 @@ void createCroc(Crocodile *croc, int *pipeFd) {
                 exit(EXIT_FAILURE);
             }
             else if (pid == 0) {
-                // Crocodile tempCroc;
                 srand(time(NULL) ^ getpid());
                 close(pipeFd[0]); // chiude il lato di lettura
 
@@ -109,8 +107,6 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             }
         }
 
-        // MessageType type = MSG_CROC;
-        // write(pipeFd[1], &type, sizeof(type)); 
         write(pipeFd[1], &croc->info, sizeof(Informations));
         usleep(croc->info.speed * 10000);
     }

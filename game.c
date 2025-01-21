@@ -23,11 +23,11 @@ void initGame(Game *game) {
     }
 
     //adesso funziona anche senza pipe non bloccante (non so perchè)
-    int flags1 = fcntl(game->pipeFd[0], F_GETFL, 0);
-    fcntl(game->pipeFd[0], F_SETFL, flags1 | O_NONBLOCK);
+    // int flags1 = fcntl(game->pipeFd[0], F_GETFL, 0);
+    // fcntl(game->pipeFd[0], F_SETFL, flags1 | O_NONBLOCK);
 
-    int flags2 = fcntl(game->mainToEntPipe[0], F_GETFL, 0);
-    fcntl(game->mainToEntPipe[0], F_SETFL, flags2 | O_NONBLOCK);
+    // int flags2 = fcntl(game->mainToEntPipe[0], F_GETFL, 0);
+    // fcntl(game->mainToEntPipe[0], F_SETFL, flags2 | O_NONBLOCK);
 
     inizializza_mappa();
     disegna_mappa();
@@ -64,14 +64,14 @@ void runGame(Game* game) {
         
 
         playerCrocIdx = isFrogOnCroc(game);
-        if (playerCrocIdx > 0) {
-            tempFrog->isOnCroc = 1; 
-        }
-        else {
-            tempFrog->isOnCroc = 0; 
-        }
         write(game->mainToEntPipe[1], &game->frog.info, sizeof(Informations));
 
+        if(tempFrog->isOnCroc == 0 && isFrogOnRiver(game)) {
+            if(tempFrog->lives == 0) break;
+            tempFrog->lives--; 
+            tempFrog->info.x = ((COLS - 1) / 2) - 4; 
+            tempFrog->info.y = LINES - 4;
+        }
 
         werase(stdscr); 
 

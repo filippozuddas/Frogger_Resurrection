@@ -1,7 +1,7 @@
 #pragma once
 
-#define MAX_V 8
-#define MIN_V 5
+#define MAX_V 12
+#define MIN_V 8
 #define N_FLOW 8
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)

@@ -16,3 +16,4 @@ void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe);
 void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe); 
 int checkCollision(Informations frogInfo, Informations crocInfo);
 int isFrogOnCroc(Game *game);
+int isFrogOnRiver(Game *game);
