@@ -1,6 +1,6 @@
 #include "frog.h"
 
-void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe) {
+void createFrog(Frog *frog, int *pipeFd, int *mainToFrogPipe) {
     /* inizializzazione frog */
     /* le coordinate x e y si riferiscono all'angolo in alto a sinistra della sprite */
     frog->info.x = ((COLS - 1) / 2) - 4; 
@@ -18,15 +18,15 @@ void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe) {
     }
     else if(pidFrog == 0) {
         close(pipeFd[0]); 
-        inputHandler(frog, pipeFd, mainToEntPipe); 
+        inputHandler(frog, pipeFd, mainToFrogPipe); 
         exit(0); 
     }
 }
 
-void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe) { 
+void inputHandler(Frog *frog, int *pipeFd, int *mainToFrogPipe) { 
     while(1) {
 
-        read(mainToEntPipe[0], &frog->info, sizeof(Informations));
+        read(mainToFrogPipe[0], &frog->info, sizeof(Informations));
 
         int input = getch(); 
         
@@ -51,15 +51,14 @@ void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe) {
             case KEY_LEFT:
                 frog->info.x = (frog->info.x > 0) ? frog->info.x - 1 : frog->info.x;
                 break;
+            case ' ': 
+                //se a schermo è presente una sola granate viene stampata in modo fluido (da fixare)
+                createGrenade(frog, pipeFd, 1); 
+                //createGrenade(frog, pipeFd, -1); 
             default:
                 continue;
-
-            /* da implementare '' per le granate */
         }
         
-           
-
-
         write(pipeFd[1], &frog->info, sizeof(Informations)); 
 
         //usleep(16000);
@@ -95,4 +94,53 @@ int isFrogOnRiver(Game *game) {
         return 1;
     }
     return 0; 
+}
+
+void createGrenade(Frog *frog, int *pipeFd, int direction) {
+    Grenade grenade; 
+
+    grenade.info.x = (direction == 1) ? frog->info.x + FROG_LENGTH : frog->info.x; 
+    grenade.info.y = frog->info.y + 2;
+    grenade.info.direction = direction; 
+    grenade.info.speed = 50000;
+    grenade.info.ID = 17;
+
+    pid_t grenadePid = fork(); 
+    if (grenadePid < 0) {
+        perror("Fork failed"); 
+        exit(1); 
+    }
+    else if (grenadePid == 0) {
+        grenade.info.pid = getpid();
+        moveGrenade(&grenade, pipeFd); 
+        exit(0); 
+    }
+}
+
+void moveGrenade(Grenade *grenade, int *pipeFd) {
+    while(1) {
+        if(grenade->info.direction == 1) {
+            grenade->info.x++; 
+            if(grenade->info.x > COLS) {
+                break;
+                //exit(0);
+                //kill(grenade->info.pid, SIGTERM); 
+            }
+        } 
+        else if (grenade->info.direction == -1) {
+            grenade->info.x--; 
+            if(grenade->info.x < 0) {
+                break;
+                //exit(0);
+                //kill(grenade->info.pid, SIGTERM); 
+            }
+        }
+
+        //mvprintw(grenade->info.y, grenade->info.x, "*");
+
+        write(pipeFd[1], &grenade->info, sizeof(Informations)); 
+        usleep(grenade->info.speed); 
+    }
+
+    exit(0);
 }

@@ -23,7 +23,7 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
     return 1; // posizione valida
 }
 
-void createCroc(Crocodile *croc, int *pipeFd) {
+void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
 
     int crocID = 1;          // Conta i coccodrilli totali
     int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
@@ -76,7 +76,7 @@ void createCroc(Crocodile *croc, int *pipeFd) {
                 srand(time(NULL) ^ getpid());
                 close(pipeFd[0]); // chiude il lato di lettura
 
-                moveCroc(&tempCroc, pipeFd);
+                moveCroc(&tempCroc, pipeFd, mainToCrocPipe);
                 exit(0);
             }
             else {
@@ -90,8 +90,13 @@ void createCroc(Crocodile *croc, int *pipeFd) {
     }
 }
 
-void moveCroc(Crocodile *croc, int *pipeFd) {
+void moveCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
+    Informations newInfo; 
     while(1){
+        /*if(read(mainToCrocPipe[0], &newInfo, sizeof(Informations)) >0 ){
+            croc->info = newInfo;
+        }*/
+
         if (croc->info.direction == 0) {
             croc->info.x++; 
             if (croc->info.x >= COLS + 1 + CROC_LENGHT){
@@ -107,7 +112,57 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             }
         }
 
+
         write(pipeFd[1], &croc->info, sizeof(Informations));
         usleep(croc->info.speed * 10000);
+    }
+}
+
+/*
+ * Funzione per resettare le posizioni, direzione e velocità dei coccodrilli 
+ * dopo la fine di ogni manche 
+ */
+void resetCroc(Crocodile *croc) {
+    int crocIdx = 0;          // Conta i coccodrilli totali
+    int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
+
+    srand(time(NULL));
+
+    //inizializza la direzione dei flussi  (0 => destra; 1 => sinistra)
+    flowDirection[0] = rand() % 2; 
+    for (int i = 1; i < N_FLOW; i++) {
+        flowDirection[i] = !flowDirection[i-1]; 
+    }
+
+    // Inizializza la velocità dei i flussi
+    for (int i = 0; i < N_FLOW; i++) {
+        flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
+    }
+
+    for (int flow = 0; flow < N_FLOW; flow++) {
+        for (int j = 0; j < CROC_PER_FLOW; j++) {
+            // Decidiamo la y in base al flusso corrente
+            int spawnY = (LINES - 8) - (flow * CROC_HEIGHT);
+
+            // Trova x casuale valida
+            int spawnX = 0;
+            int validPosition = 0;
+
+            // Ciclo per trovare una posizione non sovrapposta
+            while (!validPosition) {
+                // x casuale interna al limite (es. da 1 a COLS - CROC_LENGHT - 2)
+                spawnX = rand() % (COLS - CROC_LENGHT) + 1;
+                validPosition = isPositionValid(spawnX, spawnY,croc, placedCrocCount);
+            }
+
+            //inizializzo i valori prima della fork 
+            croc[crocIdx].info.y = spawnY;
+            croc[crocIdx].info.x = spawnX;
+            croc[crocIdx].info.direction = flowDirection[flow]; 
+            croc[crocIdx].info.speed = flowSpeed[flow]; 
+
+            crocIdx++;
+            placedCrocCount++;
+        }
     }
 }

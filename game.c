@@ -17,7 +17,7 @@ void initGame(Game *game) {
 
     game->isRunning = 1; 
 
-    if(pipe(game->pipeFd) < 0 || pipe(game->mainToEntPipe) < 0) {
+    if(pipe(game->pipeFd) < 0 || pipe(game->mainToFrogPipe) < 0 || pipe(game->mainToCrocPipe) < 0) {
         perror("pipe creation error"); 
         exit(1); 
     }
@@ -26,8 +26,12 @@ void initGame(Game *game) {
     // int flags1 = fcntl(game->pipeFd[0], F_GETFL, 0);
     // fcntl(game->pipeFd[0], F_SETFL, flags1 | O_NONBLOCK);
 
-    // int flags2 = fcntl(game->mainToEntPipe[0], F_GETFL, 0);
-    // fcntl(game->mainToEntPipe[0], F_SETFL, flags2 | O_NONBLOCK);
+    // int flags2 = fcntl(game->mainToFrogPipe[0], F_GETFL, 0);
+    // fcntl(game->mainToFrogPipe[0], F_SETFL, flags2 | O_NONBLOCK);
+
+    int flags3 = fcntl(game->mainToCrocPipe[0], F_GETFL, 0);
+    fcntl(game->mainToCrocPipe[0], F_SETFL, flags3 | O_NONBLOCK);
+
 
     inizializza_mappa();
     disegna_mappa();
@@ -36,15 +40,17 @@ void initGame(Game *game) {
 
 void runGame(Game* game) {
  
-    createCroc(game->crocodile, game->pipeFd);
-    createFrog(&(game->frog), game->pipeFd, game->mainToEntPipe);
+    createCroc(game->crocodile, game->pipeFd, game->mainToCrocPipe);
+    createFrog(&(game->frog), game->pipeFd, game->mainToFrogPipe);
 
     Frog *tempFrog = &game->frog;
     Crocodile *croc = game->crocodile;
     Informations info;
+    Grenade grenade;
+
 
     close(game->pipeFd[1]);
-    close(game->mainToEntPipe[0]);
+    close(game->mainToFrogPipe[0]);
 
     int playerCrocIdx = 0;
 
@@ -53,21 +59,30 @@ void runGame(Game* game) {
             if(info.ID == 0) {
                 tempFrog->info = info;
             }
-            if(info.ID >= 1) {
+            else if(info.ID >= 1 && info.ID <= 16) {
                 croc[info.ID - 1].info = info; 
 
                 if (playerCrocIdx == info.ID && tempFrog->isOnCroc){
                     tempFrog->info.x = info.x + tempFrog->onCrocOffset;
                 }
             }
+            else if(info.ID > 16){
+                grenade.info = info;
+            }
         }
         
 
         playerCrocIdx = isFrogOnCroc(game);
-        write(game->mainToEntPipe[1], &game->frog.info, sizeof(Informations));
+        write(game->mainToFrogPipe[1], &tempFrog->info, sizeof(Informations));
 
         if(tempFrog->isOnCroc == 0 && isFrogOnRiver(game)) {
-            if(tempFrog->lives == 0) break;
+            if(tempFrog->lives == 0) {
+                game->isRunning = 0; 
+                break;
+            }
+            //sleep(1);
+            //resetCroc(croc);
+            //write(game->mainToCrocPipe[1], &croc->info, sizeof(Informations));
             tempFrog->lives--; 
             tempFrog->info.x = ((COLS - 1) / 2) - 4; 
             tempFrog->info.y = LINES - 4;
@@ -86,6 +101,8 @@ void runGame(Game* game) {
         }
 
         printFrog(tempFrog->info.x, tempFrog->info.y);
+
+        mvprintw(grenade.info.y, grenade.info.x, "*");
         
         refresh();
 

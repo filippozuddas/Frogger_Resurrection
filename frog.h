@@ -12,8 +12,10 @@
 #include <string.h>
 #include "struct.h"
 
-void createFrog(Frog *frog, int *pipeFd, int *mainToEntPipe);
-void inputHandler(Frog *frog, int *pipeFd, int *mainToEntPipe); 
+void createFrog(Frog *frog, int *pipeFd, int *mainToFrogPipe);
+void inputHandler(Frog *frog, int *pipeFd, int *mainToFrogPipe); 
 int checkCollision(Informations frogInfo, Informations crocInfo);
 int isFrogOnCroc(Game *game);
 int isFrogOnRiver(Game *game);
+void createGrenade(Frog *frog, int *pipeFd, int direction); 
+void moveGrenade(Grenade *grenade, int *pipeFd); 

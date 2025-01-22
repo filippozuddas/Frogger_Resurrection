@@ -16,5 +16,6 @@ extern const char *crocSprite[CROC_HEIGHT][CROC_LENGHT];
 extern int flowDirection[N_FLOW]; 
 extern int flowSpeed[N_FLOW]; 
 
-void createCroc(Crocodile *croc, int *pipeFd); 
-void moveCroc(Crocodile *croc, int *pipeFd); 
+void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe); 
+void moveCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe); 
+void resetCroc(Crocodile *croc);

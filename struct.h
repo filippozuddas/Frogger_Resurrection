@@ -12,6 +12,8 @@
 #define FROG_LENGTH 10
 #define FROG_HEIGHT 4
 
+#define MAX_GRENADES 10
+
 typedef struct {
     int x; 
     int y; 
@@ -21,7 +23,7 @@ typedef struct {
     pid_t pid;
 } Informations;
 
-typedef struct {
+typedef struct Crocodile{
     Informations info;
 } Crocodile;
 
@@ -32,12 +34,18 @@ typedef struct Frog {
     int isOnCroc; 
     int onCrocIdx;
     int onCrocOffset; 
-}Frog; 
+} Frog; 
 
-typedef struct {
+typedef struct Grenade {
+    Informations info; 
+} Grenade;
+
+typedef struct Game{
     unsigned int isRunning; 
     int pipeFd[2]; 
-    int mainToEntPipe[2];
+    int mainToCrocPipe[2];
+    int mainToFrogPipe[2];
     Crocodile crocodile[N_CROC]; 
     Frog frog; 
+    Grenade grenades[MAX_GRENADES];
 } Game;
