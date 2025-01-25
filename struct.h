@@ -45,7 +45,7 @@ typedef struct Game{
     int pipeFd[2]; 
     int mainToCrocPipe[2];
     int mainToFrogPipe[2];
-    Crocodile crocodile[N_CROC]; 
     Frog frog; 
+    Crocodile crocodile[N_CROC]; 
     Grenade grenades[MAX_GRENADES];
 } Game;

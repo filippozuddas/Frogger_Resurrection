@@ -1,8 +1,11 @@
 #include "frog.h"
 
-void createFrog(Frog *frog, int *pipeFd, int *mainToFrogPipe) {
+void createFrog(Game *game) {
     /* inizializzazione frog */
     /* le coordinate x e y si riferiscono all'angolo in alto a sinistra della sprite */
+    
+    Frog *frog = &game->frog; 
+
     frog->info.x = ((COLS - 1) / 2) - 4; 
     frog->info.y = LINES - 4; 
     frog->info.ID = 0;
@@ -17,16 +20,17 @@ void createFrog(Frog *frog, int *pipeFd, int *mainToFrogPipe) {
         exit(1); 
     }
     else if(pidFrog == 0) {
-        close(pipeFd[0]); 
-        inputHandler(frog, pipeFd, mainToFrogPipe); 
+        close(game->pipeFd[0]); 
+        inputHandler(game, frog); 
         exit(0); 
     }
 }
 
-void inputHandler(Frog *frog, int *pipeFd, int *mainToFrogPipe) { 
+void inputHandler(Game *game, Frog *frog) { 
+    int grenadeId = 17; 
     while(1) {
 
-        read(mainToFrogPipe[0], &frog->info, sizeof(Informations));
+        read(game->mainToFrogPipe[0], &frog->info, sizeof(Informations));
 
         int input = getch(); 
         
@@ -53,13 +57,16 @@ void inputHandler(Frog *frog, int *pipeFd, int *mainToFrogPipe) {
                 break;
             case ' ': 
                 //se a schermo è presente una sola granate viene stampata in modo fluido (da fixare)
-                createGrenade(frog, pipeFd, 1); 
-                //createGrenade(frog, pipeFd, -1); 
+                createGrenade(game, frog, 1, grenadeId); 
+                createGrenade(game, frog, -1, grenadeId + 1); 
+                grenadeId += 2;
+
+                break;
             default:
                 continue;
         }
         
-        write(pipeFd[1], &frog->info, sizeof(Informations)); 
+        write(game->pipeFd[1], &frog->info, sizeof(Informations)); 
 
         //usleep(16000);
     }
@@ -96,14 +103,14 @@ int isFrogOnRiver(Game *game) {
     return 0; 
 }
 
-void createGrenade(Frog *frog, int *pipeFd, int direction) {
+void createGrenade(Game *game, Frog *frog, int direction, int grenadeId) {
     Grenade grenade; 
 
     grenade.info.x = (direction == 1) ? frog->info.x + FROG_LENGTH : frog->info.x; 
     grenade.info.y = frog->info.y + 2;
     grenade.info.direction = direction; 
-    grenade.info.speed = 50000;
-    grenade.info.ID = 17;
+    grenade.info.speed = 30000;
+    grenade.info.ID = grenadeId;
 
     pid_t grenadePid = fork(); 
     if (grenadePid < 0) {
@@ -112,7 +119,7 @@ void createGrenade(Frog *frog, int *pipeFd, int direction) {
     }
     else if (grenadePid == 0) {
         grenade.info.pid = getpid();
-        moveGrenade(&grenade, pipeFd); 
+        moveGrenade(&grenade, game->pipeFd); 
         exit(0); 
     }
 }
@@ -129,7 +136,7 @@ void moveGrenade(Grenade *grenade, int *pipeFd) {
         } 
         else if (grenade->info.direction == -1) {
             grenade->info.x--; 
-            if(grenade->info.x < 0) {
+            if(grenade->info.x < -1) {
                 break;
                 //exit(0);
                 //kill(grenade->info.pid, SIGTERM); 
@@ -142,5 +149,5 @@ void moveGrenade(Grenade *grenade, int *pipeFd) {
         usleep(grenade->info.speed); 
     }
 
-    exit(0);
+    _exit(0);
 }

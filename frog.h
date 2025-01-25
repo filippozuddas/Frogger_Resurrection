@@ -12,10 +12,10 @@
 #include <string.h>
 #include "struct.h"
 
-void createFrog(Frog *frog, int *pipeFd, int *mainToFrogPipe);
-void inputHandler(Frog *frog, int *pipeFd, int *mainToFrogPipe); 
+void createFrog(Game *game);
+void inputHandler(Game *game, Frog *frog); 
 int checkCollision(Informations frogInfo, Informations crocInfo);
 int isFrogOnCroc(Game *game);
 int isFrogOnRiver(Game *game);
-void createGrenade(Frog *frog, int *pipeFd, int direction); 
+void createGrenade(Game *game, Frog *frog, int direction, int grenadeId); 
 void moveGrenade(Grenade *grenade, int *pipeFd); 
