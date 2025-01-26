@@ -47,7 +47,7 @@ void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
             // Decidiamo la y in base al flusso corrente
-            int spawnY = (LINES - 8) - (flow * CROC_HEIGHT);
+            int spawnY = (GAME_HEIGHT - 9) - (flow * CROC_HEIGHT);
 
             // Trova x casuale valida
             int spawnX = 0;
@@ -55,8 +55,8 @@ void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
 
             // Ciclo per trovare una posizione non sovrapposta
             while (!validPosition) {
-                // x casuale interna al limite (es. da 1 a COLS - CROC_LENGHT - 2)
-                spawnX = rand() % (COLS - CROC_LENGHT) + 1;
+                // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
+                spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
                 validPosition = isPositionValid(spawnX, spawnY,croc, placedCrocCount);
             }
 
@@ -99,7 +99,7 @@ void moveCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
 
         if (croc->info.direction == 0) {
             croc->info.x++; 
-            if (croc->info.x >= COLS + 1 + CROC_LENGHT){
+            if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT){
                 sleep(rand() % (3 - 2 + 1) + 2);
                 croc->info.x = 0 - CROC_LENGHT;
             }
@@ -108,7 +108,7 @@ void moveCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
             croc->info.x--; 
             if(croc->info.x < -2 -CROC_LENGHT) {
                 sleep(rand() % (3 - 2 + 1) + 2); 
-                croc->info.x = COLS - 1 + CROC_LENGHT;
+                croc->info.x = GAME_WIDTH - 1 + CROC_LENGHT;
             }
         }
 
@@ -142,7 +142,7 @@ void resetCroc(Crocodile *croc) {
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
             // Decidiamo la y in base al flusso corrente
-            int spawnY = (LINES - 8) - (flow * CROC_HEIGHT);
+            int spawnY = (GAME_HEIGHT - 8) - (flow * CROC_HEIGHT);
 
             // Trova x casuale valida
             int spawnX = 0;
@@ -150,8 +150,8 @@ void resetCroc(Crocodile *croc) {
 
             // Ciclo per trovare una posizione non sovrapposta
             while (!validPosition) {
-                // x casuale interna al limite (es. da 1 a COLS - CROC_LENGHT - 2)
-                spawnX = rand() % (COLS - CROC_LENGHT) + 1;
+                // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
+                spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
                 validPosition = isPositionValid(spawnX, spawnY,croc, placedCrocCount);
             }
 

@@ -5,5 +5,5 @@
 #include "frog.h"
 #include "colors.h"
 
-void printCroc(int x, int y, int direction); 
-void printFrog(int x, int y); 
+void printCroc(WINDOW *win, int x, int y, int direction); 
+void printFrog(WINDOW *win, int x, int y); 

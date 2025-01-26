@@ -1,4 +1,8 @@
 #pragma once
 
+#include <ncurses.h>
+#include "struct.h"
+
 void inizializza_mappa(); // Inizializza ncurses e i colori
-void disegna_mappa();     // Disegna la mappa del gioco
+void disegna_blocco(WINDOW *win, int starty, int startx, int altezza, int larghezza, int color_pair);
+void disegna_mappa(WINDOW *win);     // Disegna la mappa del gioco

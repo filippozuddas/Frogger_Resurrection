@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/types.h>
+
 #define MAX_V 12
 #define MIN_V 8
 #define N_FLOW 8
@@ -14,12 +16,17 @@
 
 #define MAX_GRENADES 10
 
+// Dimensioni dello schermo
+#define GAME_WIDTH 112
+#define GAME_HEIGHT 52
+
 typedef struct {
     int x; 
     int y; 
     int direction; 
     int speed; 
     int ID;   // 0 = frog, 1 = croc
+    int grenadesRemaining; 
     pid_t pid;
 } Informations;
 
@@ -48,4 +55,5 @@ typedef struct Game{
     Frog frog; 
     Crocodile crocodile[N_CROC]; 
     Grenade grenades[MAX_GRENADES];
+    WINDOW *gameWin;
 } Game;

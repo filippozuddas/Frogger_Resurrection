@@ -6,9 +6,10 @@ void createFrog(Game *game) {
     
     Frog *frog = &game->frog; 
 
-    frog->info.x = ((COLS - 1) / 2) - 4; 
-    frog->info.y = LINES - 4; 
+    frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+    frog->info.y = GAME_HEIGHT - 5; 
     frog->info.ID = 0;
+    frog->info.grenadesRemaining = 5; 
     frog->lives = 3; 
     frog->score = 0; 
     frog->isOnCroc = 0; 
@@ -43,12 +44,12 @@ void inputHandler(Game *game, Frog *frog) {
             case 's':
             case 'S':
             case KEY_DOWN:
-                frog->info.y = (frog->info.y < LINES - FROG_HEIGHT) ? frog->info.y + FROG_HEIGHT : frog->info.y;
+                frog->info.y = (frog->info.y < GAME_HEIGHT - FROG_HEIGHT) ? frog->info.y + FROG_HEIGHT : frog->info.y;
                 break;
             case 'd':
             case 'D':
             case KEY_RIGHT:
-                frog->info.x = (frog->info.x < COLS - 1) ? frog->info.x + 1 : frog->info.x;
+                frog->info.x = (frog->info.x < GAME_WIDTH - 1) ? frog->info.x + 1 : frog->info.x;
                 break;
             case 'a':
             case 'A':
@@ -56,11 +57,11 @@ void inputHandler(Game *game, Frog *frog) {
                 frog->info.x = (frog->info.x > 0) ? frog->info.x - 1 : frog->info.x;
                 break;
             case ' ': 
-                //se a schermo è presente una sola granate viene stampata in modo fluido (da fixare)
-                createGrenade(game, frog, 1, grenadeId); 
-                createGrenade(game, frog, -1, grenadeId + 1); 
-                grenadeId += 2;
-
+                if (frog->info.grenadesRemaining > 0) {
+                    createGrenade(game, frog, 1, grenadeId++); 
+                    createGrenade(game, frog, -1, grenadeId++); 
+                    frog->info.grenadesRemaining--;
+                }
                 break;
             default:
                 continue;
@@ -97,7 +98,7 @@ int isFrogOnCroc(Game *game) {
 }
 
 int isFrogOnRiver(Game *game) {
-    if(game->frog.info.y < LINES - 5 && game->frog.info.y > 10) {
+    if(game->frog.info.y < GAME_HEIGHT - 5 && game->frog.info.y > 11) {
         return 1;
     }
     return 0; 
@@ -122,13 +123,16 @@ void createGrenade(Game *game, Frog *frog, int direction, int grenadeId) {
         moveGrenade(&grenade, game->pipeFd); 
         exit(0); 
     }
+    else {
+        grenade.info.pid = grenadePid; 
+    }
 }
 
 void moveGrenade(Grenade *grenade, int *pipeFd) {
     while(1) {
         if(grenade->info.direction == 1) {
             grenade->info.x++; 
-            if(grenade->info.x > COLS) {
+            if(grenade->info.x > GAME_WIDTH) {
                 break;
                 //exit(0);
                 //kill(grenade->info.pid, SIGTERM); 
@@ -142,8 +146,6 @@ void moveGrenade(Grenade *grenade, int *pipeFd) {
                 //kill(grenade->info.pid, SIGTERM); 
             }
         }
-
-        //mvprintw(grenade->info.y, grenade->info.x, "*");
 
         write(pipeFd[1], &grenade->info, sizeof(Informations)); 
         usleep(grenade->info.speed); 

@@ -1,10 +1,8 @@
 #pragma once
-#include <curses.h>
+#include <ncurses.h>
 
 //Moltiplicando un valore RGB compreso tra 0 e 255 per questa costante, si converte il valore nella scala [0 - 1000] utilizzata da ncurses 
 #define RGB_CONVERTER 3.921569
-
-#define CHANGE_COLOR(n) attron(COLOR_PAIR(n))
 
 void initColors(short c, short r, short g, short b); 
 void setColors(); 

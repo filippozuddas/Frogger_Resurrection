@@ -34,7 +34,19 @@ void initGame(Game *game) {
 
 
     inizializza_mappa();
-    disegna_mappa();
+    int startx = (COLS - GAME_WIDTH) / 2;
+    int starty = (LINES - GAME_HEIGHT) / 2;
+
+    if (startx < 0 || starty < 0) {
+        endwin();
+        printf("Il terminale è troppo piccolo per eseguire il gioco.\n");
+        exit(1);
+    }
+
+
+    game->gameWin = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx);
+
+    disegna_mappa(game->gameWin);
 }
 
 
@@ -58,7 +70,7 @@ void runGame(Game* game) {
      * senza dover scrivere ogni volta 'game->...'
      */
 
-    Frog *tempFrog = &game->frog;
+    Frog *frog = &game->frog;
     Crocodile *croc = game->crocodile;
     Grenade *grenades = game->grenades;
     
@@ -81,14 +93,14 @@ void runGame(Game* game) {
         while(read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
             /* ID = 0 corrisponde alla rana */
             if(info.ID == 0) {
-                tempFrog->info = info;
+                frog->info = info;
             }
             /* ID tra 1 e 16 corrispondono ai coccodrilli */
             else if(info.ID >= 1 && info.ID <= 16) {
                 croc[info.ID - 1].info = info; 
 
-                if (playerCrocIdx == info.ID && tempFrog->isOnCroc){
-                    tempFrog->info.x = info.x + tempFrog->onCrocOffset;
+                if (playerCrocIdx == info.ID && frog->isOnCroc){
+                    frog->info.x = info.x + frog->onCrocOffset;
                 }
             }
             /* ID > 16 corrispondono alle granate della rana */
@@ -120,51 +132,55 @@ void runGame(Game* game) {
          * Attraverso una pipe inversa (dal padre al processo rana) comunico le nuove coordinate
          * alla rana, nel caso in cui sia sopra un coccodrillo  
          */
-        write(game->mainToFrogPipe[1], &tempFrog->info, sizeof(Informations));
+        write(game->mainToFrogPipe[1], &frog->info, sizeof(Informations));
 
         /* Verifico se la rana è caduta in acqua */
-        if(tempFrog->isOnCroc == 0 && isFrogOnRiver(game)) {
-            if(tempFrog->lives == 0) {
+        if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
+            frog->info.x < 0 || frog->info.x + FROG_LENGTH > GAME_WIDTH) {
+            if(frog->lives == 0) {
                 game->isRunning = 0; 
                 break;
             }
             //sleep(1);
             //resetCroc(croc);
             //write(game->mainToCrocPipe[1], &croc->info, sizeof(Informations));
-            tempFrog->lives--; 
-            tempFrog->info.x = ((COLS - 1) / 2) - 4; 
-            tempFrog->info.y = LINES - 4;
+            frog->lives--; 
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+            frog->info.y = GAME_HEIGHT - 5;
         }
 
         /* Stampo le entità di gioco */
-        werase(stdscr); 
+        werase(game->gameWin); 
 
-        disegna_mappa();
+        disegna_mappa(game->gameWin);
 
-        mvprintw(1, 1, "Player's lives: %d", tempFrog->lives);
-        mvprintw(1, 20, "LINES: %d, COLS: %d", LINES, COLS);
-        mvprintw(1, 50, "x = %d, y = %d", tempFrog->info.x, tempFrog->info.y);
+        mvwprintw(game->gameWin, 1, 1, "Player's lives: %d", frog->lives);
+        mvwprintw(game->gameWin, 1, 20, "LINES: %d, COLS: %d", GAME_HEIGHT, GAME_WIDTH);
+        mvwprintw(game->gameWin, 1, 50, "x = %d, y = %d", frog->info.x, frog->info.y);
+        mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
 
         for (int i = 0; i < N_CROC; i++) {
-            printCroc(croc[i].info.x, croc[i].info.y, croc[i].info.direction);
+            printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
         }
 
-        printFrog(tempFrog->info.x, tempFrog->info.y);
+        printFrog(game->gameWin, frog->info.x, frog->info.y);
         
         for (int i = 0; i < MAX_GRENADES; i++) {
             if (grenades[i].info.ID != -1) {
-                mvprintw(grenades[i].info.y, grenades[i].info.x, "*");
+                mvwprintw(game->gameWin, grenades[i].info.y, grenades[i].info.x, "%s", "💣");
                 /* 
                  * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
                  * per un altra granata 
                  */
-                if (grenades[i].info.x < 0 || grenades[i].info.x >= COLS) {
+                if (grenades[i].info.x < -1 || grenades[i].info.x >= COLS) {
+                    //kill(grenades[i].info.pid, SIGTERM); 
+                    waitpid(grenades[i].info.pid, NULL, 0); 
                     grenades[i].info.ID = -1;
                 }
             }
         }
         
-        refresh();
+        wrefresh(game->gameWin);
 
         usleep(1000);
     }
@@ -181,6 +197,7 @@ void stopGame(Game *game) {
     for (int i = 0; i < N_CROC; i++) {
         waitpid(game->crocodile[i].info.pid, NULL, 0);
     }
-    
+
+    delwin(game->gameWin);
     endwin(); 
 }
