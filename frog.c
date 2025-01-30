@@ -28,7 +28,7 @@ void createFrog(Game *game) {
 }
 
 void inputHandler(Game *game, Frog *frog) { 
-    int grenadeId = 17; 
+    int grenadeId = N_CROC + 1; 
     while(1) {
 
         read(game->mainToFrogPipe[0], &frog->info, sizeof(Informations));

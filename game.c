@@ -17,7 +17,7 @@ void initGame(Game *game) {
 
     game->isRunning = 1; 
 
-    if(pipe(game->pipeFd) < 0 || pipe(game->mainToFrogPipe) < 0 || pipe(game->mainToCrocPipe) < 0) {
+    if(pipe(game->pipeFd) < 0 || pipe(game->mainToFrogPipe) < 0) {
         perror("pipe creation error"); 
         exit(1); 
     }
@@ -29,8 +29,8 @@ void initGame(Game *game) {
     int flags2 = fcntl(game->mainToFrogPipe[0], F_GETFL, 0);
     fcntl(game->mainToFrogPipe[0], F_SETFL, flags2 | O_NONBLOCK);
 
-    int flags3 = fcntl(game->mainToCrocPipe[0], F_GETFL, 0);
-    fcntl(game->mainToCrocPipe[0], F_SETFL, flags3 | O_NONBLOCK);
+    // int flags3 = fcntl(game->mainToCrocPipe[0], F_GETFL, 0);
+    // fcntl(game->mainToCrocPipe[0], F_SETFL, flags3 | O_NONBLOCK);
 
 
     inizializza_mappa();
@@ -53,7 +53,7 @@ void initGame(Game *game) {
 void runGame(Game* game) {
 
     /* Creazione e inizializzazione dei coccodrilli e della rana (player) */
-    createCroc(game->crocodile, game->pipeFd, game->mainToCrocPipe);
+    createCroc(game);
     createFrog(game);
 
     
@@ -96,7 +96,7 @@ void runGame(Game* game) {
                 frog->info = info;
             }
             /* ID tra 1 e 16 corrispondono ai coccodrilli */
-            else if(info.ID >= 1 && info.ID <= 16) {
+            else if(info.ID >= 1 && info.ID <= N_CROC) {
                 croc[info.ID - 1].info = info; 
 
                 if (playerCrocIdx == info.ID && frog->isOnCroc){
@@ -104,7 +104,7 @@ void runGame(Game* game) {
                 }
             }
             /* ID > 16 corrispondono alle granate della rana */
-            else if(info.ID > 16){
+            else if(info.ID > N_CROC){
                 int found = 0;
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (grenades[i].info.ID == info.ID) {
@@ -127,7 +127,6 @@ void runGame(Game* game) {
         
         /* Verifico se la rana si trova sopra un coccodrillo */
         playerCrocIdx = isFrogOnCroc(game);
-
         /* 
          * Attraverso una pipe inversa (dal padre al processo rana) comunico le nuove coordinate
          * alla rana, nel caso in cui sia sopra un coccodrillo  
@@ -137,16 +136,18 @@ void runGame(Game* game) {
         /* Verifico se la rana è caduta in acqua */
         if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
             frog->info.x < 0 || frog->info.x + FROG_LENGTH > GAME_WIDTH) {
+            
+            frog->lives--; 
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+            frog->info.y = GAME_HEIGHT - 5;
+
             if(frog->lives == 0) {
                 game->isRunning = 0; 
                 break;
             }
-            //sleep(1);
-            //resetCroc(croc);
-            //write(game->mainToCrocPipe[1], &croc->info, sizeof(Informations));
-            frog->lives--; 
-            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
-            frog->info.y = GAME_HEIGHT - 5;
+
+            resetCroc(game); 
+            continue;
         }
 
         /* Stampo le entità di gioco */
@@ -188,15 +189,8 @@ void runGame(Game* game) {
 
 
 void stopGame(Game *game) {
-    //Termina tutti i processi figli
-    for (int i = 0; i < N_CROC; i++) {
-        kill(game->crocodile[i].info.pid, SIGTERM);
-    }
-
-    // Aspetta che tutti i processi figli terminino
-    for (int i = 0; i < N_CROC; i++) {
-        waitpid(game->crocodile[i].info.pid, NULL, 0);
-    }
+    /* Uccido i processi coccodrillo */ 
+    killCroc(game);
 
     delwin(game->gameWin);
     endwin(); 

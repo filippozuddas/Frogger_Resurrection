@@ -32,6 +32,7 @@ typedef struct {
 
 typedef struct Crocodile{
     Informations info;
+    int mainToCrocPipe[2];
 } Crocodile;
 
 typedef struct Frog {
@@ -50,7 +51,7 @@ typedef struct Grenade {
 typedef struct Game{
     unsigned int isRunning; 
     int pipeFd[2]; 
-    int mainToCrocPipe[2];
+    //int mainToCrocPipe[2];
     int mainToFrogPipe[2];
     Frog frog; 
     Crocodile crocodile[N_CROC]; 

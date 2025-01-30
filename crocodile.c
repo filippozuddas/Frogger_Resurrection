@@ -18,31 +18,22 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
                 return 0; // posizione non valida
             }
         }
-        
     }
     return 1; // posizione valida
 }
 
-void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
+void createCroc(Game *game) {
 
+    srand(time(NULL));
+    
     int crocID = 1;          // Conta i coccodrilli totali
     int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
 
-    Crocodile tempCroc; 
-
-    srand(time(NULL));
-
-    //inizializza la direzione dei flussi  (0 => destra; 1 => sinistra)
+    /* Inizializza la direzione (0 => destra; 1 => sinistra) e velocità dei flussi */
     flowDirection[0] = rand() % 2; 
-    for (int i = 1; i < N_FLOW; i++) {
-        flowDirection[i] = !flowDirection[i-1]; 
-    }
-
-    // Inizializza la velocità dei i flussi
-    for (int i = 0; i < N_FLOW; i++) {
-        flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
-    }
-
+    for (int i = 1; i < N_FLOW; i++) flowDirection[i] = !flowDirection[i-1]; 
+    for (int i = 0; i < N_FLOW; i++) flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
+    
     // Creazione dei coccodrilli (N_FLOW flussi, CROC_PER_FLOW ciascuno)
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
@@ -57,15 +48,22 @@ void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
             while (!validPosition) {
                 // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
                 spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
-                validPosition = isPositionValid(spawnX, spawnY,croc, placedCrocCount);
+                validPosition = isPositionValid(spawnX, spawnY,game->crocodile, placedCrocCount);
             }
+            
+            Crocodile *croc = &game->crocodile[crocID - 1]; 
 
             //inizializzo i valori prima della fork 
-            tempCroc.info.x = spawnX;
-            tempCroc.info.y = spawnY;
-            tempCroc.info.direction = flowDirection[flow]; 
-            tempCroc.info.speed = flowSpeed[flow]; 
-            tempCroc.info.ID = crocID;
+            croc->info.x = spawnX;
+            croc->info.y = spawnY;
+            croc->info.direction = flowDirection[flow]; 
+            croc->info.speed = flowSpeed[flow]; 
+            croc->info.ID = crocID;
+
+            if (pipe(croc->mainToCrocPipe) < 0) {
+                perror("Pipe creation error"); 
+                exit(1); 
+            }
 
             pid_t pid = fork();
             if (pid < 0) {
@@ -74,14 +72,16 @@ void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
             }
             else if (pid == 0) {
                 srand(time(NULL) ^ getpid());
-                close(pipeFd[0]); // chiude il lato di lettura
 
-                moveCroc(&tempCroc, pipeFd, mainToCrocPipe);
+                close(croc->mainToCrocPipe[1]);
+                close(game->pipeFd[0]); 
+
+                moveCroc(croc, game->pipeFd);
                 exit(0);
             }
             else {
-                tempCroc.info.pid = pid; 
-                croc[crocID-1] = tempCroc; 
+                croc->info.pid = pid; 
+                close(croc->mainToCrocPipe[0]);
 
                 crocID++;
                 placedCrocCount++;
@@ -90,28 +90,33 @@ void createCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
     }
 }
 
-void moveCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
-    Informations newInfo; 
+void moveCroc(Crocodile *croc, int *pipeFd) {
+    int flags = fcntl(croc->mainToCrocPipe[0], F_GETFL, 0);
+    fcntl(croc->mainToCrocPipe[0], F_SETFL, flags | O_NONBLOCK);
+
     while(1){
-        /*if(read(mainToCrocPipe[0], &newInfo, sizeof(Informations)) >0 ){
-            croc->info = newInfo;
-        }*/
+        Informations newInfo;
+        if (read(croc->mainToCrocPipe[0], &newInfo, sizeof(Informations)) > 0) {
+            croc->info.x = newInfo.x; 
+            croc->info.y = newInfo.y; 
+            croc->info.direction = newInfo.direction; 
+            croc->info.speed = newInfo.speed; 
+        }
 
         if (croc->info.direction == 0) {
             croc->info.x++; 
             if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT){
                 sleep(rand() % (3 - 2 + 1) + 2);
-                croc->info.x = 0 - CROC_LENGHT;
+                croc->info.x = -1 - CROC_LENGHT;
             }
         }
         else {
             croc->info.x--; 
-            if(croc->info.x < -2 -CROC_LENGHT) {
+            if(croc->info.x < -1 -CROC_LENGHT) {
                 sleep(rand() % (3 - 2 + 1) + 2); 
                 croc->info.x = GAME_WIDTH - 1 + CROC_LENGHT;
             }
         }
-
 
         write(pipeFd[1], &croc->info, sizeof(Informations));
         usleep(croc->info.speed * 10000);
@@ -122,27 +127,23 @@ void moveCroc(Crocodile *croc, int *pipeFd, int *mainToCrocPipe) {
  * Funzione per resettare le posizioni, direzione e velocità dei coccodrilli 
  * dopo la fine di ogni manche 
  */
-void resetCroc(Crocodile *croc) {
-    int crocIdx = 0;          // Conta i coccodrilli totali
+void resetCroc(Game *game) {
+    
+    srand(time(NULL));
+    
+    int crocID = 1;          // Conta i coccodrilli totali
     int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
 
-    srand(time(NULL));
-
-    //inizializza la direzione dei flussi  (0 => destra; 1 => sinistra)
+    /* Inizializza la direzione (0 => destra; 1 => sinistra) e velocità dei flussi */
     flowDirection[0] = rand() % 2; 
-    for (int i = 1; i < N_FLOW; i++) {
-        flowDirection[i] = !flowDirection[i-1]; 
-    }
-
-    // Inizializza la velocità dei i flussi
-    for (int i = 0; i < N_FLOW; i++) {
-        flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
-    }
-
+    for (int i = 1; i < N_FLOW; i++) flowDirection[i] = !flowDirection[i-1]; 
+    for (int i = 0; i < N_FLOW; i++) flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
+    
+    // Creazione dei coccodrilli (N_FLOW flussi, CROC_PER_FLOW ciascuno)
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
             // Decidiamo la y in base al flusso corrente
-            int spawnY = (GAME_HEIGHT - 8) - (flow * CROC_HEIGHT);
+            int spawnY = (GAME_HEIGHT - 9) - (flow * CROC_HEIGHT);
 
             // Trova x casuale valida
             int spawnX = 0;
@@ -152,17 +153,31 @@ void resetCroc(Crocodile *croc) {
             while (!validPosition) {
                 // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
                 spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
-                validPosition = isPositionValid(spawnX, spawnY,croc, placedCrocCount);
+                validPosition = isPositionValid(spawnX, spawnY,game->crocodile, placedCrocCount);
             }
+            
+            Crocodile *croc = &game->crocodile[crocID - 1]; 
 
-            //inizializzo i valori prima della fork 
-            croc[crocIdx].info.y = spawnY;
-            croc[crocIdx].info.x = spawnX;
-            croc[crocIdx].info.direction = flowDirection[flow]; 
-            croc[crocIdx].info.speed = flowSpeed[flow]; 
+            croc->info.x = spawnX;
+            croc->info.y = spawnY;
+            croc->info.direction = flowDirection[flow]; 
+            croc->info.speed = flowSpeed[flow]; 
+            croc->info.ID = crocID;
 
-            crocIdx++;
-            placedCrocCount++;
+            write(croc->mainToCrocPipe[1], &croc->info, sizeof(Informations));
+
+            crocID++;
+            placedCrocCount++; 
         }
+    }
+}
+
+void killCroc(Game *game) {
+    for (int i = 0; i < N_CROC; i++) {
+        kill(game->crocodile[i].info.pid, SIGTERM); 
+    }
+
+    for (int i = 0; i < N_CROC; i++) {
+        waitpid(game->crocodile[i].info.pid, NULL, 0); 
     }
 }
