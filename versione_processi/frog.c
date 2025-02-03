@@ -104,10 +104,27 @@ int isFrogOnRiver(Game *game) {
     return 0; 
 }
 
+int isFrogOnDen(Game *game) {
+    Frog *frog = &game->frog; 
+
+    for (int i = 0; i < N_DENS; i++) {
+        Den *den = &game->dens[i]; 
+
+        if (den->isOpen &&
+            frog->info.x >= den->x && 
+            frog->info.x <= den->x + den->width && 
+            frog->info.y == den->y) {
+            den->isOpen = 0; 
+            return 1; 
+        }
+    }
+    return 0; 
+}
+
 void createGrenade(Game *game, Frog *frog, int direction, int grenadeId) {
     Grenade grenade; 
 
-    grenade.info.x = (direction == 1) ? frog->info.x + FROG_LENGTH : frog->info.x; 
+    grenade.info.x = (direction == 1) ? frog->info.x + FROG_WIDTH : frog->info.x; 
     grenade.info.y = frog->info.y + 2;
     grenade.info.direction = direction; 
     grenade.info.speed = 30000;

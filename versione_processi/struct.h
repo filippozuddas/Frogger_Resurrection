@@ -2,7 +2,7 @@
 
 #include <sys/types.h>
 
-#define MAX_V 12
+#define MAX_V 10
 #define MIN_V 8
 #define N_FLOW 8
 #define CROC_PER_FLOW 2
@@ -11,13 +11,17 @@
 #define CROC_LENGHT 21
 #define MIN_CROC_DISTANCE 8
 
-#define FROG_LENGTH 10
+#define FROG_WIDTH 10
 #define FROG_HEIGHT 4
 
 #define MAX_GRENADES 10
 
+#define MAX_PROJECTILES 50
+
+#define N_DENS 5
+
 // Dimensioni dello schermo
-#define GAME_WIDTH 112
+#define GAME_WIDTH 110
 #define GAME_HEIGHT 52
 
 typedef struct {
@@ -48,13 +52,26 @@ typedef struct Grenade {
     Informations info; 
 } Grenade;
 
+typedef struct Projectile {
+    Informations info;
+} Projectile;
+
+typedef struct Den {
+    int x; 
+    int y; 
+    int width; 
+    int height;
+    int isOpen; 
+} Den;
+
 typedef struct Game{
     unsigned int isRunning; 
     int pipeFd[2]; 
-    //int mainToCrocPipe[2];
     int mainToFrogPipe[2];
     Frog frog; 
     Crocodile crocodile[N_CROC]; 
     Grenade grenades[MAX_GRENADES];
+    Projectile projectiles[MAX_PROJECTILES];
+    Den dens[N_DENS];
     WINDOW *gameWin;
 } Game;

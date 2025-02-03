@@ -9,6 +9,7 @@
 #include "struct.h"
 #include "map.h"
 
+void initDens(Game *game);
 void initGame(Game *game); 
 void runGame(Game *game); 
 void stopGame(Game *game); 

@@ -18,24 +18,28 @@ void disegna_blocco(WINDOW *win, int starty, int startx, int height, int width, 
     wattroff(win, COLOR_PAIR(color_pair));
 }
 
-void disegna_mappa(WINDOW *win) {
+void disegna_mappa(Game *game) {
     // Disegna il marciapiede di partenza
-    disegna_blocco(win, GAME_HEIGHT - 5, 0, 4, GAME_WIDTH, 1);
+    disegna_blocco(game->gameWin, GAME_HEIGHT - 5, 0, 4, GAME_WIDTH, 1);
 
     // Disegna l'area del fiume
-    disegna_blocco(win, 4, 0, GAME_HEIGHT - 9, GAME_WIDTH, 2);
+    disegna_blocco(game->gameWin, 4, 0, GAME_HEIGHT - 9, GAME_WIDTH, 2);
 
     // Disegna la sponda superiore (argine)
-    disegna_blocco(win, 11, 0, 4, GAME_WIDTH, 3);
+    disegna_blocco(game->gameWin, 11, 0, 4, GAME_WIDTH, 3);
 
     // Disegna 5 tane equidistanti
-    int larghezzaTana = 10;
-    int spaziaturaTane = (GAME_WIDTH - 5 * larghezzaTana) / 6; // Spazio tra tane
-    for (int i = 0; i < 5; i++) {
-        int startx = spaziaturaTane + i * (larghezzaTana + spaziaturaTane);
-        disegna_blocco(win, 7, startx, 4, larghezzaTana, 1);
+    for (int i = 0; i < N_DENS; i++) {
+        Den *den = &game->dens[i]; 
+        if (den->isOpen) {
+            disegna_blocco(game->gameWin, den->y, den->x, den->height, den->width, 1); 
+        }
+        else {
+            disegna_blocco(game->gameWin, den->y, den->x, den->height, den->width, 1);
+            printFrog(game->gameWin, den->x, den->y); 
+        }
     }
 
-    //box(win, 0, 0); 
+    //box(game->gameWin, 0, 0); 
 }
 

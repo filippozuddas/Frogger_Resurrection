@@ -12,7 +12,7 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
         // Se hanno la stessa riga
         if (crocodiles[i].info.y == y_new) {
             // Calcola distanza in base a x
-            int diff = abs(x_new - crocodiles[i].info.x); 
+            int diff = abs(crocodiles[i].info.x - x_new); 
             // Se si sovrappongono o sono troppo vicini
             if (diff < (CROC_LENGHT + MIN_CROC_DISTANCE)) {
                 return 0; // posizione non valida
@@ -91,8 +91,12 @@ void createCroc(Game *game) {
 }
 
 void moveCroc(Crocodile *croc, int *pipeFd) {
+    srand(time(NULL) ^ getpid());
+
     int flags = fcntl(croc->mainToCrocPipe[0], F_GETFL, 0);
     fcntl(croc->mainToCrocPipe[0], F_SETFL, flags | O_NONBLOCK);
+
+    int projectileID = 27; 
 
     while(1){
         Informations newInfo;
@@ -106,16 +110,21 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
         if (croc->info.direction == 0) {
             croc->info.x++; 
             if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT){
-                sleep(rand() % (3 - 2 + 1) + 2);
+                sleep(rand() % (5 - 4 + 1) + 4);
                 croc->info.x = -1 - CROC_LENGHT;
             }
         }
         else {
             croc->info.x--; 
             if(croc->info.x < -1 -CROC_LENGHT) {
-                sleep(rand() % (3 - 2 + 1) + 2); 
+                sleep(rand() % (5 - 4 + 1) + 4); 
                 croc->info.x = GAME_WIDTH - 1 + CROC_LENGHT;
             }
+        }
+
+        int shootChance = rand() % 1000; 
+        if (shootChance < 5) {
+            createProjectile(croc, pipeFd, projectileID++);
         }
 
         write(pipeFd[1], &croc->info, sizeof(Informations));
@@ -162,7 +171,7 @@ void resetCroc(Game *game) {
             croc->info.y = spawnY;
             croc->info.direction = flowDirection[flow]; 
             croc->info.speed = flowSpeed[flow]; 
-            croc->info.ID = crocID;
+            //croc->info.ID = crocID;
 
             write(croc->mainToCrocPipe[1], &croc->info, sizeof(Informations));
 
@@ -179,5 +188,65 @@ void killCroc(Game *game) {
 
     for (int i = 0; i < N_CROC; i++) {
         waitpid(game->crocodile[i].info.pid, NULL, 0); 
+    }
+}
+
+void createProjectile(Crocodile *croc, int *pipeFd, int projectileID) {
+    Projectile projectile; 
+
+    projectile.info.x = croc->info.x; 
+    projectile.info.y = croc->info.y + 2; 
+    projectile.info.direction = croc->info.direction;
+    projectile.info.speed = croc->info.speed - 4;
+    projectile.info.ID = projectileID; 
+
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("Fork failed"); 
+        exit(1); 
+    }
+    else if (pid == 0) {
+        projectile.info.pid = getpid(); 
+        moveProjectile(&projectile, pipeFd); 
+        exit(0);
+    }
+}
+
+void moveProjectile(Projectile *projectile, int *pipeFd) {
+    while(1) {
+        if (projectile->info.direction == 0) {
+            projectile->info.x++;
+            if (projectile->info.x > GAME_WIDTH) break;
+        }
+        else {
+            projectile->info.x--;
+            if (projectile->info.x < -1) break;
+        }
+
+        write(pipeFd[1], &projectile->info, sizeof(Informations));
+        usleep(projectile->info.speed * 10000);
+    }
+    _exit(0);
+}
+
+void handleProjectileGeneration(Game *game) {
+    int projectileID = 27; 
+
+    if (rand() % 100 < 10) {
+        int visibleCrocs[N_CROC]; 
+        int visibleCount = 0; 
+
+        for (int i = 0; i < N_CROC; i++) {
+            if (game->crocodile[i].info.x >= - CROC_LENGHT && 
+                game->crocodile[i].info.x <= GAME_WIDTH - CROC_LENGHT) {
+                    visibleCrocs[visibleCount++] = i;
+                }
+        }   
+
+        if (visibleCount > 0) {
+            int selectedCroc = visibleCrocs[rand() % visibleCount]; 
+            createProjectile(&game->crocodile[selectedCroc], game->pipeFd, projectileID++);
+        }
     }
 }

@@ -34,3 +34,4 @@ void setColors();
 #define GREEN_BLACK_FROG 20
 #define GREEN_GREEN_FROG 21
 #define GREEN_PINK_FROG 22
+#define YELLOW_GREEN_FROG 23

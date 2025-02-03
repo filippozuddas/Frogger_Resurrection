@@ -17,5 +17,6 @@ void inputHandler(Game *game, Frog *frog);
 int checkCollision(Informations frogInfo, Informations crocInfo);
 int isFrogOnCroc(Game *game);
 int isFrogOnRiver(Game *game);
+int isFrogOnDen(Game *game);
 void createGrenade(Game *game, Frog *frog, int direction, int grenadeId); 
 void moveGrenade(Grenade *grenade, int *pipeFd); 

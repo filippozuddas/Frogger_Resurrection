@@ -28,9 +28,10 @@ void setColors() {
     initColors(FROG_GREEN, 34, 177, 76);
     initColors(FROG_PINK, 255, 163, 177);
 
-    init_pair(GREEN_BLACK_FROG, FROG_GREEN, COLOR_BLACK); 
+    init_pair(GREEN_BLACK_FROG, FROG_GREEN, CROC_BLACK); 
     init_pair(GREEN_GREEN_FROG, FROG_GREEN, FROG_GREEN); 
     init_pair(GREEN_PINK_FROG, FROG_GREEN, FROG_PINK); 
+    init_pair(YELLOW_GREEN_FROG, COLOR_YELLOW, COLOR_GREEN);
 
     
 }

@@ -44,25 +44,32 @@ void printCroc(WINDOW *win, int x, int y, int direction) {
 }
 
 void printFrog(WINDOW *win, int x, int y) {
-    wchar_t frogSprite[FROG_HEIGHT][FROG_LENGTH] = {
+    wchar_t frogSprite[FROG_HEIGHT][FROG_WIDTH] = {
         {L'n', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'n'},
         {L' ', L' ', L' ', L'▄', L' ', L' ', L' ', L'▄', L' ', L' '},
         {L' ', L' ', L' ', L' ', L'▄', L'▄', L' ', L' ', L' ', L' '},
         {L'n', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'n'}
     };
 
-    short colors[FROG_HEIGHT][FROG_LENGTH] = {
+    short colors[FROG_HEIGHT][FROG_WIDTH] = {
         {0, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, 0},
         {BLACK_BLACK, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, BLACK_BLACK},
         {BLACK_BLACK, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_PINK_FROG, GREEN_PINK_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK},
         {0, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, BLACK_BG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BG, 0}
     };
 
+    /*short colors[FROG_HEIGHT][FROG_WIDTH] = {
+        {0, YELLOW_GREEN_FROG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, YELLOW_GREEN_FROG, YELLOW_GREEN_FROG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, YELLOW_GREEN_FROG, 0},
+        {BLACK_BLACK, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, BLACK_BLACK},
+        {BLACK_BLACK, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_PINK_FROG, GREEN_PINK_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK},
+        {0, YELLOW_GREEN_FROG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, YELLOW_GREEN_FROG, YELLOW_GREEN_FROG, GREEN_BLACK_FROG, GREEN_BLACK_FROG, YELLOW_GREEN_FROG, 0}
+    };*/
+
     int maxY, maxX; 
     getmaxyx(win, maxY, maxX); 
 
     for (int i = 0; i < FROG_HEIGHT; i++) {
-        for (int j = 0; j < FROG_LENGTH; j++) {
+        for (int j = 0; j < FROG_WIDTH; j++) {
             if(frogSprite[i][j] != L'n'){
                 wattron(win, COLOR_PAIR(colors[i][j]));
                 mvwprintw(win, y + i, x + j, "%lc", frogSprite[i][j]);

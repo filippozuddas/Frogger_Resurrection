@@ -20,7 +20,7 @@ sprite.o: sprite.c sprite.h colors.h crocodile.h
 colors.o: colors.c colors.h	
 	gcc -c colors.c -o colors.o
 
-map.o: map.c map.h struct.h
+map.o: map.c map.h struct.h sprite.h
 	gcc -c map.c -o map.o
 	
 clean:
