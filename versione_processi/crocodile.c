@@ -110,14 +110,14 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
         if (croc->info.direction == 0) {
             croc->info.x++; 
             if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT){
-                sleep(rand() % (5 - 4 + 1) + 4);
+                //sleep(rand() % (5 - 4 + 1) + 4);
                 croc->info.x = -1 - CROC_LENGHT;
             }
         }
         else {
             croc->info.x--; 
             if(croc->info.x < -1 -CROC_LENGHT) {
-                sleep(rand() % (5 - 4 + 1) + 4); 
+                //sleep(rand() % (5 - 4 + 1) + 4); 
                 croc->info.x = GAME_WIDTH - 1 + CROC_LENGHT;
             }
         }

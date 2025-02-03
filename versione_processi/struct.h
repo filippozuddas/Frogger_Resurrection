@@ -2,14 +2,14 @@
 
 #include <sys/types.h>
 
-#define MAX_V 10
+#define MAX_V 12
 #define MIN_V 8
 #define N_FLOW 8
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
 #define CROC_LENGHT 21
-#define MIN_CROC_DISTANCE 8
+#define MIN_CROC_DISTANCE 20
 
 #define FROG_WIDTH 10
 #define FROG_HEIGHT 4

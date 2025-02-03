@@ -271,7 +271,7 @@ void runGame(Game* game) {
 
         wrefresh(game->gameWin);
 
-        usleep(1000);
+        //usleep(1000);
     }
 }
 
