@@ -231,7 +231,7 @@ void moveProjectile(Projectile *projectile, int *pipeFd) {
 }
 
 void handleProjectileGeneration(Game *game) {
-    int projectileID = 27; 
+    static int projectileID = 27; 
 
     if (rand() % 100 < 10) {
         int visibleCrocs[N_CROC]; 
