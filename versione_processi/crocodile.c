@@ -111,7 +111,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             croc->info.x++; 
             if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT){
                 //sleep(rand() % (5 - 4 + 1) + 4);
-                croc->info.x = -1 - CROC_LENGHT;
+                croc->info.x = 0 - CROC_LENGHT;
             }
         }
         else {
@@ -171,7 +171,7 @@ void resetCroc(Game *game) {
             croc->info.y = spawnY;
             croc->info.direction = flowDirection[flow]; 
             croc->info.speed = flowSpeed[flow]; 
-            //croc->info.ID = crocID;
+            croc->info.ID = crocID;
 
             write(croc->mainToCrocPipe[1], &croc->info, sizeof(Informations));
 
