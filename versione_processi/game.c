@@ -37,12 +37,11 @@ void initGame(Game *game) {
         exit(1); 
     }
 
-    //adesso funziona anche senza pipe non bloccante (non so perchè)
-    int flags1 = fcntl(game->pipeFd[0], F_GETFL, 0);
-    fcntl(game->pipeFd[0], F_SETFL, flags1 | O_NONBLOCK);
+    setNonBlocking(game->mainToFrogPipe[0]);
+    setNonBlocking(game->mainToFrogPipe[1]);
 
-    int flags2 = fcntl(game->mainToFrogPipe[0], F_GETFL, 0);
-    fcntl(game->mainToFrogPipe[0], F_SETFL, flags2 | O_NONBLOCK);
+    setNonBlocking(game->pipeFd[0]);  // Lettura
+    setNonBlocking(game->pipeFd[1]);  // Scrittura
 
     inizializza_mappa();
 
@@ -110,7 +109,7 @@ void runGame(Game* game) {
     /* Ciclo principale di gestione del gioco */
     while (game->isRunning) {
         /* Lettura dalla pipe */
-        while(read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
+        while(full_read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
             /* ID = 0 corrisponde alla rana */
             if (info.ID == 0) {
                 frog->info = info;
@@ -177,6 +176,7 @@ void runGame(Game* game) {
          * Attraverso una pipe inversa (dal padre al processo rana) comunico le nuove coordinate
          * alla rana, nel caso in cui sia sopra un coccodrillo  
          */
+        flushPipe(game->mainToFrogPipe[1]);
         write(game->mainToFrogPipe[1], &frog->info, sizeof(Informations));
 
         /* Verifico se la rana è caduta in acqua */
@@ -282,4 +282,30 @@ void stopGame(Game *game) {
 
     delwin(game->gameWin);
     endwin(); 
+}
+
+//accerta che il contenuto scritto nella pipe venga letto detl tutto
+ssize_t full_read(int fd, void *buffer, size_t size) {
+    size_t totalRead = 0;
+    while (totalRead < size) {
+        ssize_t bytesRead = read(fd, (char *)buffer + totalRead, size - totalRead);
+        if (bytesRead <= 0) {
+            return bytesRead; // Errore o pipe chiusa
+        }
+        totalRead += bytesRead;
+    }
+    return totalRead;
+}
+
+
+//serve a liberare la pipe prima della scrittura 
+void flushPipe(int fd) {
+    Informations tmp;
+    while (read(fd, &tmp, sizeof(Informations)) > 0);
+}
+
+//setta la pipe non bloccante
+void setNonBlocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
