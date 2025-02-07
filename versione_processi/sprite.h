@@ -6,4 +6,5 @@
 #include "colors.h"
 
 void printCroc(WINDOW *win, int x, int y, int direction); 
-void printFrog(WINDOW *win, int x, int y); 
+void printFrog(Game *game, WINDOW *win, int x, int y); 
+void printFrogOnDen(WINDOW *win, int x, int y);

@@ -237,7 +237,7 @@ void runGame(Game* game) {
             printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
         }
 
-        printFrog(game->gameWin, frog->info.x, frog->info.y);
+        printFrog(game, game->gameWin, frog->info.x, frog->info.y);
         
         for (int i = 0; i < MAX_GRENADES; i++) {
             if (grenades[i].info.ID != -1) {

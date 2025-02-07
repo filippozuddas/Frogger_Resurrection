@@ -44,7 +44,7 @@ void inputHandler(Game *game, Frog *frog) {
             case 's':
             case 'S':
             case KEY_DOWN:
-                frog->info.y = (frog->info.y < GAME_HEIGHT - FROG_HEIGHT) ? frog->info.y + FROG_HEIGHT : frog->info.y;
+                frog->info.y = (frog->info.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? frog->info.y + FROG_HEIGHT : frog->info.y;
                 break;
             case 'd':
             case 'D':
@@ -119,6 +119,13 @@ int isFrogOnDen(Game *game) {
         }
     }
     return 0; 
+}
+
+int isFrogOnTopBank(Game *game) {
+    if (game->frog.info.y >= 11 && game->frog.info.y <= 14) {
+        return 1; 
+    }
+    return 0;
 }
 
 void createGrenade(Game *game, Frog *frog, int direction, int grenadeId) {

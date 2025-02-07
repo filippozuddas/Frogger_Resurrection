@@ -36,7 +36,7 @@ void disegna_mappa(Game *game) {
         }
         else {
             disegna_blocco(game->gameWin, den->y, den->x, den->height, den->width, 1);
-            printFrog(game->gameWin, den->x, den->y); 
+            printFrogOnDen(game->gameWin, den->x, den->y); 
         }
     }
 
