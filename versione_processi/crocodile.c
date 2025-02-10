@@ -96,7 +96,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
     int flags = fcntl(croc->mainToCrocPipe[0], F_GETFL, 0);
     fcntl(croc->mainToCrocPipe[0], F_SETFL, flags | O_NONBLOCK);
 
-    int projectileID = 27; 
+    int projectileID = 50; 
 
     while(1){
         Informations newInfo;
@@ -206,10 +206,12 @@ void createProjectile(Crocodile *croc, int *pipeFd, int projectileID) {
         perror("Fork failed"); 
         exit(1); 
     }
-    else if (pid == 0) {
-        projectile.info.pid = getpid(); 
+    else if (pid == 0) { 
         moveProjectile(&projectile, pipeFd); 
         exit(0);
+    }
+    else {
+        projectile.info.pid = pid;
     }
 }
 

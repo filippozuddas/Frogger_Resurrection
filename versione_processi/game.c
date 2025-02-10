@@ -25,7 +25,6 @@ void initGame(Game *game) {
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);
     start_color();
-    //use_default_colors();
 
     setColors(); 
     srand(time(NULL)); 
@@ -123,7 +122,7 @@ void runGame(Game* game) {
                 }
             }
             /* ID tra 17 e 26 corrispondono alle granate della rana */
-            else if (info.ID > N_CROC && info.ID <= 26){
+            else if (info.ID > N_CROC && info.ID <= 46){
                 int foundGrenade = 0;
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (grenades[i].info.ID == info.ID) {
@@ -143,7 +142,7 @@ void runGame(Game* game) {
                 }
             }
             /* ID > 26 corrispondono ai proiettili dei coccodrilli */
-            else if (info.ID > 26) {
+            else if (info.ID > 46) {
                 int foundProjectile = 0;
                 for (int i = 0; i < MAX_PROJECTILES; i++) {
                     if (game->projectiles[i].info.ID == info.ID) {
@@ -186,6 +185,7 @@ void runGame(Game* game) {
             frog->lives--; 
             frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
             frog->info.y = GAME_HEIGHT - 5;
+            frog->info.grenadesRemaining = 5;
 
             if(frog->lives == 0) {
                 game->isRunning = 0; 
@@ -195,6 +195,56 @@ void runGame(Game* game) {
             resetCroc(game); 
             continue;
         }
+        
+        
+        /* Stampo le entità di gioco */
+        werase(game->gameWin); 
+        
+        disegna_mappa(game);
+        
+        mvwprintw(game->gameWin, 1, 1, "Player's lives: %d", frog->lives);
+        mvwprintw(game->gameWin, 1, 20, "LINES: %d, COLS: %d", GAME_HEIGHT, GAME_WIDTH);
+        mvwprintw(game->gameWin, 1, 50, "x = %d, y = %d", frog->info.x, frog->info.y);
+        mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
+        
+        for (int i = 0; i < N_CROC; i++) {
+            printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
+        }
+        
+        printFrog(game, game->gameWin, frog->info.x, frog->info.y);
+        
+        for (int i = 0; i < MAX_GRENADES; i++) {
+            if (grenades[i].info.ID != -1) {
+                mvwprintw(game->gameWin, grenades[i].info.y, grenades[i].info.x, "%s", "*");
+                /* 
+                * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
+                * per un altra granata 
+                */
+               if (grenades[i].info.x < -1 || grenades[i].info.x >= COLS) {
+                   kill(grenades[i].info.pid, SIGKILL); 
+                   //waitpid(grenades[i].info.pid, NULL, 0); 
+                   grenades[i].info.ID = -1;
+                }
+            }
+        }
+        
+        for (int i = 0; i < MAX_PROJECTILES; i++) {
+            if (game->projectiles[i].info.ID != -1) {
+                mvwprintw(game->gameWin, game->projectiles[i].info.y, game->projectiles[i].info.x, "000");
+                /* 
+                * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
+                * per un altra granata 
+                */
+               if (game->projectiles[i].info.x < 0 || game->projectiles[i].info.x >= GAME_WIDTH) {
+                   kill(game->projectiles[i].info.pid, SIGKILL); 
+                   //waitpid(game->projectiles[i].info.pid, NULL, 0);
+                   game->projectiles[i].info.ID = -1; 
+                }
+            }
+        }
+        
+        
+        wrefresh(game->gameWin);
 
         /* Verifico se la rana è su una tana */
         if (isFrogOnDen(game)) {
@@ -220,58 +270,7 @@ void runGame(Game* game) {
             }
 
             resetCroc(game); 
-            continue;
         }
-
-        /* Stampo le entità di gioco */
-        werase(game->gameWin); 
-
-        disegna_mappa(game);
-
-        mvwprintw(game->gameWin, 1, 1, "Player's lives: %d", frog->lives);
-        mvwprintw(game->gameWin, 1, 20, "LINES: %d, COLS: %d", GAME_HEIGHT, GAME_WIDTH);
-        mvwprintw(game->gameWin, 1, 50, "x = %d, y = %d", frog->info.x, frog->info.y);
-        mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
-
-        for (int i = 0; i < N_CROC; i++) {
-            printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
-        }
-
-        printFrog(game, game->gameWin, frog->info.x, frog->info.y);
-        
-        for (int i = 0; i < MAX_GRENADES; i++) {
-            if (grenades[i].info.ID != -1) {
-                mvwprintw(game->gameWin, grenades[i].info.y, grenades[i].info.x, "%s", "*");
-                /* 
-                 * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
-                 * per un altra granata 
-                 */
-                if (grenades[i].info.x < -1 || grenades[i].info.x >= COLS) {
-                    //kill(grenades[i].info.pid, SIGTERM); 
-                    waitpid(grenades[i].info.pid, NULL, 0); 
-                    grenades[i].info.ID = -1;
-                }
-            }
-        }
-
-        for (int i = 0; i < MAX_PROJECTILES; i++) {
-            if (game->projectiles[i].info.ID != -1) {
-                mvwprintw(game->gameWin, game->projectiles[i].info.y, game->projectiles[i].info.x, "000");
-                /* 
-                 * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
-                 * per un altra granata 
-                 */
-                if (game->projectiles[i].info.x < 0 || game->projectiles[i].info.x >= GAME_WIDTH) {
-                    waitpid(game->projectiles[i].info.pid, NULL, 0);
-                    game->projectiles[i].info.ID = -1; 
-                }
-            }
-        }
-
-
-        wrefresh(game->gameWin);
-
-        //usleep(1000);
     }
 }
 

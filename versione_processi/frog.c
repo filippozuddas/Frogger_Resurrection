@@ -143,7 +143,6 @@ void createGrenade(Game *game, Frog *frog, int direction, int grenadeId) {
         exit(1); 
     }
     else if (grenadePid == 0) {
-        grenade.info.pid = getpid();
         moveGrenade(&grenade, game->pipeFd); 
         exit(0); 
     }
