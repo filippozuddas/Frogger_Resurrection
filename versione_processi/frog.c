@@ -21,17 +21,21 @@ void createFrog(Game *game) {
         exit(1); 
     }
     else if(pidFrog == 0) {
-        close(game->pipeFd[0]); 
-        inputHandler(game, frog); 
+        close(game->pipeFd[0]);
+        close(game->mainToFrogPipe[1]); 
+        inputHandler(game); 
         exit(0); 
+    }
+    else {
+        frog->info.pid = pidFrog;
+        fprintf(stderr, "[PADRE Rana] Creata rana, PID figlio: %d\n", pidFrog); // DEBUG
     }
 }
 
-void inputHandler(Game *game, Frog *frog) { 
-    int grenadeId = N_CROC + 1; 
+void inputHandler(Game *game) { 
     while(1) {
 
-        read(game->mainToFrogPipe[0], &frog->info, sizeof(Informations));
+        read(game->mainToFrogPipe[0], &game->frog.info, sizeof(Informations));
 
         int input = getch(); 
         
@@ -39,37 +43,41 @@ void inputHandler(Game *game, Frog *frog) {
             case 'w':
             case 'W':
             case KEY_UP:
-                frog->info.y = (frog->info.y > 0) ? frog->info.y - FROG_HEIGHT : frog->info.y;
+                game->frog.info.y = (game->frog.info.y > 0) ? game->frog.info.y - FROG_HEIGHT : game->frog.info.y;
                 break;
             case 's':
             case 'S':
             case KEY_DOWN:
-                frog->info.y = (frog->info.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? frog->info.y + FROG_HEIGHT : frog->info.y;
+                game->frog.info.y = (game->frog.info.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? game->frog.info.y + FROG_HEIGHT : game->frog.info.y;
                 break;
             case 'd':
             case 'D':
             case KEY_RIGHT:
-                frog->info.x = (frog->info.x < GAME_WIDTH - 1) ? frog->info.x + 1 : frog->info.x;
+                game->frog.info.x = (game->frog.info.x < GAME_WIDTH - 1) ? game->frog.info.x + 1 : game->frog.info.x;
                 break;
             case 'a':
             case 'A':
             case KEY_LEFT:
-                frog->info.x = (frog->info.x > 0) ? frog->info.x - 1 : frog->info.x;
+                game->frog.info.x = (game->frog.info.x > 0) ? game->frog.info.x - 1 : game->frog.info.x;
                 break;
             case ' ': 
-                if (frog->info.grenadesRemaining > 0) {
-                    createGrenade(game, frog, 1, grenadeId++); 
-                    createGrenade(game, frog, -1, grenadeId++); 
-                    frog->info.grenadesRemaining--;
+                if (game->frog.info.grenadesRemaining > 0) {
+                    Informations grenadeSignal;
+                    grenadeSignal.ID = -1; // -1 per granata a destra
+                    write(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
+
+                    grenadeSignal.ID = -2; // -2 per granata a sinistra
+                    write(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
+
+                    game->frog.info.grenadesRemaining--;
                 }
+
                 break;
             default:
                 continue;
         }
         
-        write(game->pipeFd[1], &frog->info, sizeof(Informations)); 
-
-        //usleep(16000);
+        write(game->pipeFd[1], &game->frog.info, sizeof(Informations)); 
     }
 }
 
@@ -128,51 +136,67 @@ int isFrogOnTopBank(Game *game) {
     return 0;
 }
 
-void createGrenade(Game *game, Frog *frog, int direction, int grenadeId) {
+void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex) {
     Grenade grenade; 
 
-    grenade.info.x = (direction == 1) ? frog->info.x + FROG_WIDTH : frog->info.x; 
-    grenade.info.y = frog->info.y + 2;
+    grenade.info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH : game->frog.info.x; 
+    grenade.info.y = game->frog.info.y + 2; 
     grenade.info.direction = direction; 
-    grenade.info.speed = 30000;
-    grenade.info.ID = grenadeId;
+    grenade.info.speed = 3; 
+    grenade.info.ID = grenadeId; 
 
-    pid_t grenadePid = fork(); 
+    pid_t grenadePid = fork();
     if (grenadePid < 0) {
         perror("Fork failed"); 
-        exit(1); 
+        exit(1);
     }
     else if (grenadePid == 0) {
-        moveGrenade(&grenade, game->pipeFd); 
-        exit(0); 
+        moveGrenade(&grenade, game, grenadeId); 
+        exit(0);
     }
     else {
         grenade.info.pid = grenadePid; 
+        game->grenades[grenadeIndex] = grenade;
     }
+
 }
 
-void moveGrenade(Grenade *grenade, int *pipeFd) {
+void moveGrenade(Grenade *grenade, Game *game, int grenadeIndex) {
     while(1) {
-        if(grenade->info.direction == 1) {
-            grenade->info.x++; 
-            if(grenade->info.x > GAME_WIDTH) {
+        if (grenade->info.direction == 1) {
+            grenade->info.x++;
+            if (grenade->info.x > GAME_WIDTH) {
                 break;
-                //exit(0);
-                //kill(grenade->info.pid, SIGTERM); 
             }
-        } 
+        }
         else if (grenade->info.direction == -1) {
-            grenade->info.x--; 
-            if(grenade->info.x < -1) {
+            grenade->info.x--;
+            if (grenade->info.x < -1) {
                 break;
-                //exit(0);
-                //kill(grenade->info.pid, SIGTERM); 
             }
         }
 
-        write(pipeFd[1], &grenade->info, sizeof(Informations)); 
-        usleep(grenade->info.speed); 
+        write(game->pipeFd[1], &grenade->info, sizeof(Informations));
+        usleep(grenade->info.speed * 10000);
     }
-
     _exit(0);
+}
+
+void terminateGrenades(Game *game) {
+    for (int i = 0; i < MAX_GRENADES; i++) {
+        if (game->grenades[i].info.ID != -1) {
+            kill(game->grenades[i].info.pid, SIGKILL);
+            waitpid(game->grenades[i].info.pid, NULL, 0); //  terminazione
+            game->grenades[i].info.ID = -1; // Libera lo slot
+        }
+    }
+}
+
+int checkCollisionProjectile(Informations entity, Projectile projectile) {
+    if ((entity.y == projectile.info.y || entity.y + 2 == projectile.info.y) &&
+         entity.x + FROG_WIDTH >= projectile.info.x && 
+         entity.x <= projectile.info.x +1) {
+            return 1; 
+         }
+    return 0; 
 }

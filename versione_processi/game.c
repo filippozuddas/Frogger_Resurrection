@@ -58,16 +58,7 @@ void initGame(Game *game) {
     game->gameWin = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx);
 
     disegna_mappa(game);
-}
 
-
-void runGame(Game* game) {
-
-    /* Creazione e inizializzazione dei coccodrilli e della rana (player) */
-    createCroc(game);
-    createFrog(game);
-
-    
     /*
      * Inizializzazione dell'array di granate e dei proiettili
      * ID = -1 indica che nessuna granata è associata a quell'elemento dell'array
@@ -78,7 +69,13 @@ void runGame(Game* game) {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         game->projectiles[i].info.ID = -1;
     }
-    
+}
+
+
+void runGame(Game* game) {
+    /* Creazione e inizializzazione dei coccodrilli e della rana (player) */
+    createCroc(game);
+    createFrog(game);
 
     /*
      * Per comodità creo dei puntatori per gestire le entità dinamiche, 
@@ -96,78 +93,143 @@ void runGame(Game* game) {
      */
     Informations info;
 
-    /* Chiudo i lati delle pipe inutilizzati */
-    close(game->pipeFd[1]);
     close(game->mainToFrogPipe[0]);
 
     /* Indice del del coccodrillo sul quale si trova la rana */
     int playerCrocIdx = 0;
-
-    int projectileID = 27; 
+    int grenadeID = N_CROC + 1; 
 
     /* Ciclo principale di gestione del gioco */
     while (game->isRunning) {
+        /* Gestione delle terminazione dei processi proiettili e granate */
+        int status;
+        pid_t exited_pid;
+        while ((exited_pid = waitpid(-1, &status, WNOHANG)) > 0) {
+            // Cerca e libera lo slot del proiettile/granata
+            for (int i = 0; i < MAX_PROJECTILES; i++) {
+                if (projectiles[i].info.pid == exited_pid) {
+                    projectiles[i].info.ID = -1; // Libera lo slot
+                    break;
+                }
+            }
+            for (int i = 0; i < MAX_GRENADES; i++) {
+                if (grenades[i].info.pid == exited_pid) {
+                    grenades[i].info.ID = -1;   // Libera lo slot 
+                    break;
+                }
+            }
+        }
+
         /* Lettura dalla pipe */
-        while(full_read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
+        while(read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
             /* ID = 0 corrisponde alla rana */
             if (info.ID == 0) {
                 frog->info = info;
             }
+
             /* ID tra 1 e 16 corrispondono ai coccodrilli */
             else if (info.ID >= 1 && info.ID <= N_CROC) {
                 croc[info.ID - 1].info = info; 
-
+                
                 if (playerCrocIdx == info.ID && frog->isOnCroc){
                     frog->info.x = info.x + frog->onCrocOffset;
                 }
             }
-            /* ID tra 17 e 26 corrispondono alle granate della rana */
-            else if (info.ID > N_CROC && info.ID <= 46){
+
+            /* ID -1 e -2 usati come flag per creare le granate, rispettivamente destra e sinistra */
+            else if (info.ID == -1 || info.ID == -2) {
+                int direction = (info.ID == -1) ? 1 : -1; 
+                int grenadeIndex = -1; 
+
+                for (int i = 0; i < MAX_GRENADES; i++) {
+                    if (grenades[i].info.ID == -1) {
+                        grenadeIndex = i; 
+                        break;
+                    }
+                }
+
+                if (grenadeIndex != -1) {
+                    createGrenade(game, direction, grenadeID++, grenadeIndex); 
+                }
+            }
+
+            /* ID tra 17 e 46 corrispondono alle granate della rana */
+            else if (info.ID > N_CROC && info.ID < 46){
                 int foundGrenade = 0;
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (grenades[i].info.ID == info.ID) {
+                        // grenades[i].info.x = info.x; //Aggiorno solo x e y
+                        // grenades[i].info.y = info.y;
                         grenades[i].info = info;
+                        //fprintf(stderr, "[PADRE] Ricevuto granata - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, grenades[i].info.pid); // DEBUG
                         foundGrenade = 1;
                         break;
                     }
-                }
-                if (!foundGrenade) {
-                    // Aggiungi una nuova granata
-                    for (int i = 0; i < MAX_GRENADES; i++) {
-                        if (grenades[i].info.ID == -1) {
-                            grenades[i].info = info;
-                            break;
-                        }
-                    }
-                }
+                }    
             }
-            /* ID > 26 corrispondono ai proiettili dei coccodrilli */
+
+            /* ID > 46 corrispondono ai proiettili dei coccodrilli */
             else if (info.ID > 46) {
                 int foundProjectile = 0;
                 for (int i = 0; i < MAX_PROJECTILES; i++) {
-                    if (game->projectiles[i].info.ID == info.ID) {
-                        game->projectiles[i].info = info;
+                    if (projectiles[i].info.ID == info.ID) {
+                        // projectiles[i].info.x = info.x;
+                        // projectiles[i].info.y = info.y;
+                        projectiles[i].info = info;
+                        //fprintf(stderr, "[PADRE] Ricevuto proiettile - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, projectiles[i].info.pid); // DEBUG
                         foundProjectile = 1;
                         break;
-                    }
-                }
-                if (!foundProjectile) {
-                    for (int i = 0; i < MAX_PROJECTILES; i++) {
-                        if (game->projectiles[i].info.ID == -1) {
-                            game->projectiles[i].info = info;
-                            break;
-                        }
                     }
                 }
             }
         }
 
-        /*int shootChance = rand() % 100;
-        if (shootChance < 10) {
-            int idx = rand() % N_CROC + 1; 
-            createProjectile(&croc[idx], game->pipeFd, projectileID++);
+        handleProjectileGeneration(game);
+
+        /* Rilevamente collisione Rana-Proiettile */
+        for (int i = 0; i < MAX_PROJECTILES; i++) {
+            if (projectiles[i].info.ID != -1) {
+                if (checkCollisionProjectile(frog->info, projectiles[i])) {
+                    frog->lives--;
+                    frog->info.x = ((GAME_WIDTH - 1) / 2) - 4;
+                    frog->info.y = GAME_HEIGHT - 5;
+                    frog->info.grenadesRemaining = 5;
+
+                    if (frog->lives == 0) {
+                        game->isRunning = 0; 
+                        break;
+                    }
+
+                    terminateGrenades(game);
+                    terminateProjectiles(game);
+                    resetCroc(game);
+
+                    continue;
+                }
+            }
         }
-        handleProjectileGeneration(game);*/
+
+        /* Rilevamento collisione Granata-Proiettile */
+        for (int i = 0; i < MAX_GRENADES; i++) {
+            if (grenades[i].info.ID != -1) { // Se la granata è attiva
+                for (int j = 0; j < MAX_PROJECTILES; j++) {
+                    if (projectiles[j].info.ID != -1) { // Se il proiettile è attivo
+                        if (checkCollisionProjectile(grenades[i].info, projectiles[j])) {
+                            // Collisione!
+                            kill(grenades[i].info.pid, SIGKILL); // Termina la granata
+                            waitpid(grenades[i].info.pid, NULL, 0);
+                            grenades[i].info.ID = -1;          // Libera lo slot granata
+
+                            kill(projectiles[j].info.pid, SIGKILL); // Termina il proiettile
+                            waitpid(projectiles[j].info.pid, NULL, 0);
+                            projectiles[j].info.ID = -1;        // Libera lo slot proiettile
+
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
         
         /* Verifico se la rana si trova sopra un coccodrillo */
         playerCrocIdx = isFrogOnCroc(game);
@@ -191,6 +253,9 @@ void runGame(Game* game) {
                 game->isRunning = 0; 
                 break;
             }
+
+            terminateGrenades(game);
+            terminateProjectiles(game);
 
             resetCroc(game); 
             continue;
@@ -216,33 +281,14 @@ void runGame(Game* game) {
         for (int i = 0; i < MAX_GRENADES; i++) {
             if (grenades[i].info.ID != -1) {
                 mvwprintw(game->gameWin, grenades[i].info.y, grenades[i].info.x, "%s", "*");
-                /* 
-                * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
-                * per un altra granata 
-                */
-               if (grenades[i].info.x < -1 || grenades[i].info.x >= COLS) {
-                   kill(grenades[i].info.pid, SIGKILL); 
-                   //waitpid(grenades[i].info.pid, NULL, 0); 
-                   grenades[i].info.ID = -1;
-                }
             }
         }
         
         for (int i = 0; i < MAX_PROJECTILES; i++) {
-            if (game->projectiles[i].info.ID != -1) {
-                mvwprintw(game->gameWin, game->projectiles[i].info.y, game->projectiles[i].info.x, "000");
-                /* 
-                * Se la granata è uscita dallo schermo, libero lo slot rendendolo disponibile
-                * per un altra granata 
-                */
-               if (game->projectiles[i].info.x < 0 || game->projectiles[i].info.x >= GAME_WIDTH) {
-                   kill(game->projectiles[i].info.pid, SIGKILL); 
-                   //waitpid(game->projectiles[i].info.pid, NULL, 0);
-                   game->projectiles[i].info.ID = -1; 
-                }
+            if (projectiles[i].info.ID != -1) {
+                mvwprintw(game->gameWin, projectiles[i].info.y, projectiles[i].info.x, "0");
             }
         }
-        
         
         wrefresh(game->gameWin);
 
@@ -269,8 +315,13 @@ void runGame(Game* game) {
                 game->isRunning = 0; 
             }
 
+            terminateGrenades(game); 
+            terminateProjectiles(game);
+
             resetCroc(game); 
         }
+
+        usleep(1000);
     }
 }
 
@@ -278,6 +329,7 @@ void runGame(Game* game) {
 void stopGame(Game *game) {
     /* Uccido i processi coccodrillo */ 
     killCroc(game);
+    // killProjectiles(game);
 
     delwin(game->gameWin);
     endwin(); 

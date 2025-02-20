@@ -91,13 +91,9 @@ void createCroc(Game *game) {
 }
 
 void moveCroc(Crocodile *croc, int *pipeFd) {
-    srand(time(NULL) ^ getpid());
-
     int flags = fcntl(croc->mainToCrocPipe[0], F_GETFL, 0);
     fcntl(croc->mainToCrocPipe[0], F_SETFL, flags | O_NONBLOCK);
-
-    int projectileID = 50; 
-
+    
     while(1){
         Informations newInfo;
         if (read(croc->mainToCrocPipe[0], &newInfo, sizeof(Informations)) > 0) {
@@ -106,7 +102,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             croc->info.direction = newInfo.direction; 
             croc->info.speed = newInfo.speed; 
         }
-
+        
         if (croc->info.direction == 0) {
             croc->info.x++; 
             if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT){
@@ -121,12 +117,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
                 croc->info.x = GAME_WIDTH - 1 + CROC_LENGHT;
             }
         }
-
-        int shootChance = rand() % 1000; 
-        if (shootChance < 5) {
-            createProjectile(croc, pipeFd, projectileID++);
-        }
-
+        
         write(pipeFd[1], &croc->info, sizeof(Informations));
         usleep(croc->info.speed * 10000);
     }
@@ -191,13 +182,13 @@ void killCroc(Game *game) {
     }
 }
 
-void createProjectile(Crocodile *croc, int *pipeFd, int projectileID) {
+void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID) {
     Projectile projectile; 
 
-    projectile.info.x = croc->info.x; 
+    projectile.info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x; 
     projectile.info.y = croc->info.y + 2; 
     projectile.info.direction = croc->info.direction;
-    projectile.info.speed = croc->info.speed - 4;
+    projectile.info.speed = 3;
     projectile.info.ID = projectileID; 
 
     pid_t pid = fork();
@@ -207,48 +198,91 @@ void createProjectile(Crocodile *croc, int *pipeFd, int projectileID) {
         exit(1); 
     }
     else if (pid == 0) { 
-        moveProjectile(&projectile, pipeFd); 
+        moveProjectile(projectile, pipeFd); 
         exit(0);
     }
     else {
         projectile.info.pid = pid;
+
+        int projectileIndex = -1;
+        for(int i = 0; i < MAX_PROJECTILES; i++){
+            if(game->projectiles[i].info.ID == -1){
+                projectileIndex = i;
+                break;
+            }
+        }
+        game->projectiles[projectileIndex] = projectile;
+        //fprintf(stderr, "[PADRE] Creato proiettile ID: %d, PID figlio: %d\n", projectileID, pid); // DEBUG: Stampa dopo la creazione
     }
 }
 
-void moveProjectile(Projectile *projectile, int *pipeFd) {
+void moveProjectile(Projectile projectile, int *pipeFd) {
     while(1) {
-        if (projectile->info.direction == 0) {
-            projectile->info.x++;
-            if (projectile->info.x > GAME_WIDTH) break;
+        //fprintf(stderr, "[FIGLIO Proiettile] ID: %d, PID: %d\n", projectile.info.ID, getpid()); // DEBUG: Stampa ID e PID
+        if (projectile.info.direction == 0) {
+            projectile.info.x++;
+            if (projectile.info.x > GAME_WIDTH) break;
         }
         else {
-            projectile->info.x--;
-            if (projectile->info.x < -1) break;
+            projectile.info.x--;
+            if (projectile.info.x < -1) break;
         }
 
-        write(pipeFd[1], &projectile->info, sizeof(Informations));
-        usleep(projectile->info.speed * 10000);
+        //fprintf(stderr, "[FIGLIO Proiettile] Invio: ID: %d, X: %d, Y: %d, PID: %d\n", projectile.info.ID, projectile.info.x, projectile.info.y, getpid()); // DEBUG
+        write(pipeFd[1], &projectile.info, sizeof(Informations));
+        usleep(projectile.info.speed * 10000);
     }
+    //fprintf(stderr, "[FIGLIO Proiettile] Termino ID: %d, PID: %d\n", projectile.info.ID, getpid()); // DEBUG: Terminazione
     _exit(0);
 }
 
 void handleProjectileGeneration(Game *game) {
-    static int projectileID = 27; 
+    static time_t lastShotTime = 0;
+    time_t currentTime = time(NULL);
 
-    if (rand() % 100 < 10) {
-        int visibleCrocs[N_CROC]; 
-        int visibleCount = 0; 
+    if ((rand() % 100 == 1) && (currentTime - lastShotTime >= 3)) {
+        int visibleCrocs[N_CROC];
+        int visibleCount = 0;
 
         for (int i = 0; i < N_CROC; i++) {
-            if (game->crocodile[i].info.x >= - CROC_LENGHT && 
+            if (game->crocodile[i].info.x >= -CROC_LENGHT &&
                 game->crocodile[i].info.x <= GAME_WIDTH - CROC_LENGHT) {
-                    visibleCrocs[visibleCount++] = i;
-                }
-        }   
+                visibleCrocs[visibleCount++] = i;
+            }
+        }
 
         if (visibleCount > 0) {
-            int selectedCroc = visibleCrocs[rand() % visibleCount]; 
-            createProjectile(&game->crocodile[selectedCroc], game->pipeFd, projectileID++);
+            int selectedCroc = visibleCrocs[rand() % visibleCount];
+
+            // Trova il primo slot libero in game->projectiles
+            int projectileIndex = -1;
+            for (int i = 0; i < MAX_PROJECTILES; i++) {
+                if (game->projectiles[i].info.ID == -1) {
+                    projectileIndex = i;
+                    break;
+                }
+            }
+
+            // Se abbiamo trovato uno slot libero...
+            if (projectileIndex != -1) {
+                // Genera un ID univoco (usa un timestamp o un contatore globale)
+                static int nextProjectileID = 47; 
+                int projectileID = nextProjectileID++;
+
+
+                createProjectile(&game->crocodile[selectedCroc], game->pipeFd, game, projectileID);
+                lastShotTime = currentTime;
+            }
+        }
+    }
+}
+
+void terminateProjectiles(Game *game) {
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        if (game->projectiles[i].info.ID != -1) {
+            kill(game->projectiles[i].info.pid, SIGKILL);
+            waitpid(game->projectiles[i].info.pid, NULL, 0); //  terminazione
+            game->projectiles[i].info.ID = -1; // Libera lo slot
         }
     }
 }

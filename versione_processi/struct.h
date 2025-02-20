@@ -16,7 +16,7 @@
 
 #define MAX_GRENADES 30
 
-#define MAX_PROJECTILES 50
+#define MAX_PROJECTILES 10
 
 #define N_DENS 5
 
