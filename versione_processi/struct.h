@@ -14,9 +14,9 @@
 #define FROG_WIDTH 10
 #define FROG_HEIGHT 4
 
-#define MAX_GRENADES 30
+#define MAX_GRENADES 10
 
-#define MAX_PROJECTILES 10
+#define MAX_PROJECTILES 40
 
 #define N_DENS 5
 

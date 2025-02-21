@@ -198,7 +198,7 @@ void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID
         exit(1); 
     }
     else if (pid == 0) { 
-        moveProjectile(projectile, pipeFd); 
+        moveProjectile(&projectile, pipeFd); 
         exit(0);
     }
     else {
@@ -216,23 +216,23 @@ void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID
     }
 }
 
-void moveProjectile(Projectile projectile, int *pipeFd) {
+void moveProjectile(Projectile *projectile, int *pipeFd) {
     while(1) {
         //fprintf(stderr, "[FIGLIO Proiettile] ID: %d, PID: %d\n", projectile.info.ID, getpid()); // DEBUG: Stampa ID e PID
-        if (projectile.info.direction == 0) {
-            projectile.info.x++;
-            if (projectile.info.x > GAME_WIDTH) break;
+        if (projectile->info.direction == 0) {
+            projectile->info.x++;
+            if (projectile->info.x > GAME_WIDTH) break;
         }
         else {
-            projectile.info.x--;
-            if (projectile.info.x < -1) break;
+            projectile->info.x--;
+            if (projectile->info.x < -1) break;
         }
 
-        //fprintf(stderr, "[FIGLIO Proiettile] Invio: ID: %d, X: %d, Y: %d, PID: %d\n", projectile.info.ID, projectile.info.x, projectile.info.y, getpid()); // DEBUG
-        write(pipeFd[1], &projectile.info, sizeof(Informations));
-        usleep(projectile.info.speed * 10000);
+        //fprintf(stderr, "[FIGLIO Proiettile] Invio: ID: %d, X: %d, Y: %d, PID: %d\n", projectile->info.ID, projectile->info.x, projectile->info.y, getpid()); // DEBUG
+        write(pipeFd[1], &projectile->info, sizeof(Informations));
+        usleep(projectile->info.speed * 10000);
     }
-    //fprintf(stderr, "[FIGLIO Proiettile] Termino ID: %d, PID: %d\n", projectile.info.ID, getpid()); // DEBUG: Terminazione
+    //fprintf(stderr, "[FIGLIO Proiettile] Termino ID: %d, PID: %d\n", projectile->info.ID, getpid()); // DEBUG: Terminazione
     _exit(0);
 }
 
@@ -240,7 +240,7 @@ void handleProjectileGeneration(Game *game) {
     static time_t lastShotTime = 0;
     time_t currentTime = time(NULL);
 
-    if ((rand() % 100 == 1) && (currentTime - lastShotTime >= 3)) {
+    if ((rand() % 100 == 1) && (currentTime - lastShotTime >= 2)) {
         int visibleCrocs[N_CROC];
         int visibleCount = 0;
 

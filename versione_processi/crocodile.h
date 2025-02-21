@@ -21,6 +21,6 @@ void moveCroc(Crocodile *croc, int *pipeFd);
 void resetCroc(Game *game);
 void killCroc(Game *game); 
 void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID); 
-void moveProjectile(Projectile projectile, int *pipeFd); 
+void moveProjectile(Projectile *projectile, int *pipeFd); 
 void handleProjectileGeneration(Game *game);
 void terminateProjectiles(Game *game); 
