@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include "struct.h"
+#include "communication.h"
 
 void createFrog(Game *game);
 void inputHandler(Game *game); 

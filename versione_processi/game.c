@@ -121,7 +121,7 @@ void runGame(Game* game) {
         }
 
         /* Lettura dalla pipe */
-        while(read(game->pipeFd[0], &info, sizeof(Informations)) > 0){
+        while(readData(game->pipeFd[0], &info, sizeof(Informations)) > 0){
             /* ID = 0 corrisponde alla rana */
             if (info.ID == 0) {
                 frog->info = info;
@@ -238,7 +238,7 @@ void runGame(Game* game) {
          * alla rana, nel caso in cui sia sopra un coccodrillo  
          */
         flushPipe(game->mainToFrogPipe[1]);
-        write(game->mainToFrogPipe[1], &frog->info, sizeof(Informations));
+        writeData(game->mainToFrogPipe[1], &frog->info, sizeof(Informations));
 
         /* Verifico se la rana è caduta in acqua */
         if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 

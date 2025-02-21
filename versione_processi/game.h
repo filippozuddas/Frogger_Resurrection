@@ -8,6 +8,7 @@
 #include "colors.h"
 #include "struct.h"
 #include "map.h"
+#include "communication.h"
 
 void initDens(Game *game);
 void initGame(Game *game); 

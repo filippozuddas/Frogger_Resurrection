@@ -35,7 +35,7 @@ void createFrog(Game *game) {
 void inputHandler(Game *game) { 
     while(1) {
 
-        read(game->mainToFrogPipe[0], &game->frog.info, sizeof(Informations));
+        readData(game->mainToFrogPipe[0], &game->frog.info, sizeof(Informations));
 
         int input = getch(); 
         
@@ -64,10 +64,10 @@ void inputHandler(Game *game) {
                 if (game->frog.info.grenadesRemaining > 0) {
                     Informations grenadeSignal;
                     grenadeSignal.ID = -1; // -1 per granata a destra
-                    write(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
+                    writeData(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
 
                     grenadeSignal.ID = -2; // -2 per granata a sinistra
-                    write(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
+                    writeData(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
 
                     game->frog.info.grenadesRemaining--;
                 }
@@ -77,7 +77,7 @@ void inputHandler(Game *game) {
                 continue;
         }
         
-        write(game->pipeFd[1], &game->frog.info, sizeof(Informations)); 
+        writeData(game->pipeFd[1], &game->frog.info, sizeof(Informations)); 
     }
 }
 
@@ -176,7 +176,7 @@ void moveGrenade(Grenade *grenade, Game *game, int grenadeIndex) {
             }
         }
 
-        write(game->pipeFd[1], &grenade->info, sizeof(Informations));
+        writeData(game->pipeFd[1], &grenade->info, sizeof(Informations));
         usleep(grenade->info.speed * 10000);
     }
     _exit(0);

@@ -96,7 +96,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
     
     while(1){
         Informations newInfo;
-        if (read(croc->mainToCrocPipe[0], &newInfo, sizeof(Informations)) > 0) {
+        if (readData(croc->mainToCrocPipe[0], &newInfo, sizeof(Informations)) > 0) {
             croc->info.x = newInfo.x; 
             croc->info.y = newInfo.y; 
             croc->info.direction = newInfo.direction; 
@@ -118,7 +118,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             }
         }
         
-        write(pipeFd[1], &croc->info, sizeof(Informations));
+        writeData(pipeFd[1], &croc->info, sizeof(Informations));
         usleep(croc->info.speed * 10000);
     }
 }
@@ -164,7 +164,7 @@ void resetCroc(Game *game) {
             croc->info.speed = flowSpeed[flow]; 
             croc->info.ID = crocID;
 
-            write(croc->mainToCrocPipe[1], &croc->info, sizeof(Informations));
+            writeData(croc->mainToCrocPipe[1], &croc->info, sizeof(Informations));
 
             crocID++;
             placedCrocCount++; 
@@ -229,7 +229,7 @@ void moveProjectile(Projectile *projectile, int *pipeFd) {
         }
 
         //fprintf(stderr, "[FIGLIO Proiettile] Invio: ID: %d, X: %d, Y: %d, PID: %d\n", projectile->info.ID, projectile->info.x, projectile->info.y, getpid()); // DEBUG
-        write(pipeFd[1], &projectile->info, sizeof(Informations));
+        writeData(pipeFd[1], &projectile->info, sizeof(Informations));
         usleep(projectile->info.speed * 10000);
     }
     //fprintf(stderr, "[FIGLIO Proiettile] Termino ID: %d, PID: %d\n", projectile->info.ID, getpid()); // DEBUG: Terminazione
