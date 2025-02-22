@@ -11,10 +11,10 @@
 #include <errno.h>
 #include <string.h>
 #include "struct.h"
-#include "communication.h"
+#include "game.h"
 
 void createFrog(Game *game);
-void inputHandler(Game *game); 
+void inputHandler(Game *game);
 int checkCollision(Informations frogInfo, Informations crocInfo);
 int isFrogOnCroc(Game *game);
 int isFrogOnRiver(Game *game);

@@ -21,6 +21,7 @@ void setColors() {
     init_pair(BLACK_GREEN, CROC_BLACK, CROC_GREEN);
     init_pair(WHITE_GREEN, CROC_WHITE, CROC_GREEN); 
     init_pair(BG_BLACK, COLOR_BLUE, CROC_BLACK); 
+    init_pair(BG_GREEN , COLOR_BLACK, COLOR_GREEN);
     //init_pair(BG_BG, 0, 0); 
 
 
@@ -36,5 +37,5 @@ void setColors() {
     init_pair(BLACK_BLUE, CROC_BLACK, COLOR_BLUE);
     init_pair(BLACK_BLACK_CROC, CROC_BLACK, CROC_BLACK);
     init_pair(BLACK_MAGENTA, CROC_BLACK, COLOR_MAGENTA);
-    
+    init_pair(RED_HEARTS, COLOR_RED, COLOR_BLACK);
 }

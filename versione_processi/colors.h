@@ -25,6 +25,7 @@ void setColors();
 #define WHITE_GREEN 17
 #define BG_BLACK 18
 #define BG_BG 19
+#define BG_GREEN 28
 
 /* Frog */
 
@@ -39,3 +40,6 @@ void setColors();
 #define BLACK_BLUE 25
 #define BLACK_BLACK_CROC 26
 #define BLACK_MAGENTA 27
+
+/*vite*/
+#define RED_HEARTS 29

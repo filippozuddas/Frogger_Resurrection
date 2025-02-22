@@ -1,10 +1,10 @@
 #pragma once
 
 #include <sys/types.h>
+#include <wchar.h>
+#include <ncurses.h>
 
-#define MAX_V 12
-#define MIN_V 8
-#define N_FLOW 8
+#define N_FLOW 13
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
@@ -15,14 +15,32 @@
 #define FROG_HEIGHT 4
 
 #define MAX_GRENADES 10
-
-#define MAX_PROJECTILES 40
+#define MAX_PROJECTILES 30
 
 #define N_DENS 5
 
 // Dimensioni dello schermo
-#define GAME_WIDTH 110
-#define GAME_HEIGHT 52
+#define GAME_WIDTH 200
+#define GAME_HEIGHT 70
+
+#define MAX_HEIGHT 6
+#define PATTERN_WIDTH 148
+#define MAX_HEIGHT_WELCOME 26
+
+
+#define TIMEOUT_MS 1000
+
+#define MENU_ITEMS 4
+#define LEVEL_ITEMS 3
+#define RESTART_ITEMS 2
+
+#define MAX_SCORES 10
+#define SCORES_FILE "scores.dat"
+
+#define SCORE_X 100  // Regola la posizione orizzontale
+#define SCORE_Y 5    // Regola la posizione verticale
+
+#define DIGIT_HEIGHT 3
 
 typedef struct {
     int x; 
@@ -74,4 +92,21 @@ typedef struct Game{
     Projectile projectiles[MAX_PROJECTILES];
     Den dens[N_DENS];
     WINDOW *gameWin;
+    int difficulty;
 } Game;
+
+typedef struct {
+    int id;
+    const wchar_t *text[5]; // Array di stringhe per ogni opzione
+} MenuOption;
+
+typedef struct ScoreNode {
+    int score;
+    struct ScoreNode* next;
+} ScoreNode;
+
+typedef struct {
+    int score;
+    char date[20];
+    int difficulty;  // 0=Easy, 1=Medium, 2=Hard, 3=Expert
+} ScoreEntry;

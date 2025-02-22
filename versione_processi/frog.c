@@ -33,7 +33,8 @@ void createFrog(Game *game) {
 }
 
 void inputHandler(Game *game) { 
-    while(1) {
+
+      while(1) {
 
         readData(game->mainToFrogPipe[0], &game->frog.info, sizeof(Informations));
 
@@ -106,28 +107,31 @@ int isFrogOnCroc(Game *game) {
 }
 
 int isFrogOnRiver(Game *game) {
-    if(game->frog.info.y < GAME_HEIGHT - 5 && game->frog.info.y > 11) {
-        return 1;
+    // La rana è "nell'acqua" solo tra la riga 14 (inizio del fiume) e la riga 51 (fine del fiume)
+    if (game->frog.info.y > 14 && game->frog.info.y < 65) {
+        return 1;  // La rana è nell'acqua
     }
-    return 0; 
+    return 0;  // La rana non è nell'acqua
 }
+
 
 int isFrogOnDen(Game *game) {
-    Frog *frog = &game->frog; 
+    Frog *frog = &game->frog;
 
     for (int i = 0; i < N_DENS; i++) {
-        Den *den = &game->dens[i]; 
+        Den *den = &game->dens[i];
 
         if (den->isOpen &&
-            frog->info.x >= den->x && 
-            frog->info.x <= den->x + den->width && 
+            frog->info.x >= den->x &&
+            frog->info.x + FROG_WIDTH <= den->x + den->width &&
             frog->info.y == den->y) {
-            den->isOpen = 0; 
-            return 1; 
+            den->isOpen = 0;
+            return 1;
         }
     }
-    return 0; 
+    return 0;
 }
+
 
 int isFrogOnTopBank(Game *game) {
     if (game->frog.info.y >= 11 && game->frog.info.y <= 14) {
@@ -135,6 +139,7 @@ int isFrogOnTopBank(Game *game) {
     }
     return 0;
 }
+
 
 void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex) {
     Grenade grenade; 
