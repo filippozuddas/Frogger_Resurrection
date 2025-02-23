@@ -119,17 +119,49 @@ void printFrogOnDen(WINDOW *win, int x, int y) {
 }
 
 void printGrenades(Game *game) {
-    for (int i = 0; i < MAX_GRENADES; i++) {
-        if (game->grenades[i].info.ID != -1) {
-            mvwprintw(game->gameWin, game->grenades[i].info.y, game->grenades[i].info.x, "%s", "*");
+    wchar_t grenadeSprite[1][2] = {
+        {L'▄', L'▄'}
+    };
+
+    short colors[1][2] = {
+        {LIGHT_DARK_GREY, MID_GREY_BLACK}
+    };
+
+    for (int k = 0; k < MAX_GRENADES; k++) {
+        if (game->grenades[k].info.ID != -1) {
+            for (int i = 0; i < 1; i++) {
+                for (int j = 0; j < 2; j++) {
+                    if(grenadeSprite[i][j] != L'n'){
+                        wattron(game->gameWin, COLOR_PAIR(colors[i][j]));
+                        mvwprintw(game->gameWin, game->grenades[k].info.y + i, game->grenades[k].info.x + j, "%lc", grenadeSprite[i][j]);
+                        wattroff(game->gameWin, COLOR_PAIR(colors[i][j]));
+                    }
+                }
+            } 
         }
     }
 }
 
 void printProjectiles(Game *game) {
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (game->projectiles[i].info.ID != -1) {
-            mvwprintw(game->gameWin, game->projectiles[i].info.y, game->projectiles[i].info.x, "0");
+    wchar_t projectileSprite[1][3] = {
+        {L' ', L' ', L' '}
+    };
+
+    short colors[1][3] = {
+        {YELLOW_YELLOW_PROJ, LIGHT_LIGHT_PROJ, ORANGE_ORANGE_PROJ}
+    };
+
+    for (int k = 0; k < MAX_GRENADES; k++) {
+        if (game->projectiles[k].info.ID != -1) {
+            for (int i = 0; i < 1; i++) {
+                for (int j = 0; j < 3; j++) {
+                    if(projectileSprite[i][j] != L'n'){
+                        wattron(game->gameWin, COLOR_PAIR(colors[i][j]));
+                        mvwprintw(game->gameWin, game->projectiles[k].info.y + i, game->projectiles[k].info.x + j, "%lc", projectileSprite[i][j]);
+                        wattroff(game->gameWin, COLOR_PAIR(colors[i][j]));
+                    }
+                }
+            } 
         }
     }
 }

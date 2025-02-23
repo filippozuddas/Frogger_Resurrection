@@ -284,7 +284,7 @@ void moveProjectile(Projectile *projectile, int *pipeFd) {
         }
         else {
             projectile->info.x--;
-            if (projectile->info.x < -1) break;
+            if (projectile->info.x < -3) break;
         }
 
         //fprintf(stderr, "[FIGLIO Proiettile] Invio: ID: %d, X: %d, Y: %d, PID: %d\n", projectile->info.ID, projectile->info.x, projectile->info.y, getpid()); // DEBUG

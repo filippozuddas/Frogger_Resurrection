@@ -54,7 +54,7 @@ void inputHandler(Game *game) {
             case 'd':
             case 'D':
             case KEY_RIGHT:
-                game->frog.info.x = (game->frog.info.x < GAME_WIDTH - 1) ? game->frog.info.x + 1 : game->frog.info.x;
+                game->frog.info.x = (game->frog.info.x < GAME_WIDTH - FROG_WIDTH) ? game->frog.info.x + 1 : game->frog.info.x;
                 break;
             case 'a':
             case 'A':
@@ -150,7 +150,7 @@ int isFrogOnTopBank(Game *game) {
 void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex) {
     Grenade grenade; 
 
-    grenade.info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH : game->frog.info.x; 
+    grenade.info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH - 1 : game->frog.info.x - 1; 
     grenade.info.y = game->frog.info.y + 2; 
     grenade.info.direction = direction; 
     grenade.info.speed = 3; 
@@ -182,7 +182,7 @@ void moveGrenade(Grenade *grenade, Game *game, int grenadeIndex) {
         }
         else if (grenade->info.direction == -1) {
             grenade->info.x--;
-            if (grenade->info.x < -1) {
+            if (grenade->info.x < -2) {
                 break;
             }
         }
