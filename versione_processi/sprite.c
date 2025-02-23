@@ -51,10 +51,10 @@ void printFrog(Game *game, WINDOW *win, int x, int y) {
     };
 
     short colors[FROG_HEIGHT][FROG_WIDTH] = {
-        {0, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, 0},
+        {0, BLACK_YELLOW_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_YELLOW_GRASS, BLACK_YELLOW_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_YELLOW_GRASS, 0},
         {BLACK_BLACK, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, BLACK_BLACK},
         {BLACK_BLACK, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_PINK_FROG, GREEN_PINK_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK},
-        {0, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, 0}
+        {0, BLACK_YELLOW_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_YELLOW_GRASS, BLACK_YELLOW_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_YELLOW_GRASS, 0}
     };
 
     if (isFrogOnCroc(game)) {
@@ -70,30 +70,25 @@ void printFrog(Game *game, WINDOW *win, int x, int y) {
     }
 
     if (isFrogOnTopBank(game)) {
-        colors[0][1] = BLACK_MAGENTA;
-        colors[0][4] = BLACK_MAGENTA; 
-        colors[0][5] = BLACK_MAGENTA; 
-        colors[0][8] = BLACK_MAGENTA;
+        colors[0][1] = BLACK_GREEN_GRASS;
+        colors[0][4] = BLACK_GREEN_GRASS; 
+        colors[0][5] = BLACK_GREEN_GRASS; 
+        colors[0][8] = BLACK_GREEN_GRASS;
 
-        colors[3][1] = BLACK_MAGENTA;
-        colors[3][4] = BLACK_MAGENTA; 
-        colors[3][5] = BLACK_MAGENTA; 
-        colors[3][8] = BLACK_MAGENTA;
+        colors[3][1] = BLACK_GREEN_GRASS;
+        colors[3][4] = BLACK_GREEN_GRASS; 
+        colors[3][5] = BLACK_GREEN_GRASS; 
+        colors[3][8] = BLACK_GREEN_GRASS;
     }
-
-    
-
-    int maxY, maxX; 
-    getmaxyx(win, maxY, maxX); 
 
     for (int i = 0; i < FROG_HEIGHT; i++) {
         for (int j = 0; j < FROG_WIDTH; j++) {
             if(frogSprite[i][j] != L'n'){
                 wattron(win, COLOR_PAIR(colors[i][j]));
                 mvwprintw(win, y + i, x + j, "%lc", frogSprite[i][j]);
+                wattroff(win, COLOR_PAIR(colors[i][j]));
             }
         }
-
     } 
 }
 
@@ -106,24 +101,62 @@ void printFrogOnDen(WINDOW *win, int x, int y) {
     };
 
     short colors[FROG_HEIGHT][FROG_WIDTH] = {
-        {0, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, 0},
+        {0, BLACK_BLUE, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BLUE, BLACK_BLUE, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BLUE, 0},
         {BLACK_BLACK, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK, BLACK_WHITE, GREEN_GREEN_FROG, BLACK_BLACK},
         {BLACK_BLACK, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_PINK_FROG, GREEN_PINK_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, GREEN_GREEN_FROG, BLACK_BLACK},
-        {0, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, BLACK_GREEN_GRASS, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_GREEN_GRASS, 0}
+        {0, BLACK_BLUE, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BLUE, BLACK_BLUE, GREEN_BLACK_FROG, GREEN_BLACK_FROG, BLACK_BLUE, 0}
     };
-
-
-    int maxY, maxX; 
-    getmaxyx(win, maxY, maxX); 
 
     for (int i = 0; i < FROG_HEIGHT; i++) {
         for (int j = 0; j < FROG_WIDTH; j++) {
             if(frogSprite[i][j] != L'n'){
                 wattron(win, COLOR_PAIR(colors[i][j]));
                 mvwprintw(win, y + i, x + j, "%lc", frogSprite[i][j]);
+                wattroff(win, COLOR_PAIR(colors[i][j]));
             }
         }
+    } 
+}
 
+void printGrenades(Game *game) {
+    for (int i = 0; i < MAX_GRENADES; i++) {
+        if (game->grenades[i].info.ID != -1) {
+            mvwprintw(game->gameWin, game->grenades[i].info.y, game->grenades[i].info.x, "%s", "*");
+        }
+    }
+}
+
+void printProjectiles(Game *game) {
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        if (game->projectiles[i].info.ID != -1) {
+            mvwprintw(game->gameWin, game->projectiles[i].info.y, game->projectiles[i].info.x, "0");
+        }
+    }
+}
+
+void printDen(Game *game, int x, int y) {
+    wchar_t denSprite[FROG_HEIGHT][FROG_WIDTH] = {
+        {L'n', L'▄', L'▄', L'▄', L'n', L'n', L'▄', L'▄', L'▄', L'n'},
+        {L' ', L' ', L' ', L' ', L'▄', L'▄', L' ', L' ', L' ', L' '},
+        {L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' '},
+        {L'n', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'▀', L'n'}
+    };
+
+    short colors[FROG_HEIGHT][FROG_WIDTH] = {
+        {0, DARK_GREEN_BLUE, LIGHT_GREEN_DARK_GREEN, DARK_GREEN_BLUE, 0, 0, DARK_GREEN_BLUE, LIGHT_GREEN_DARK_GREEN, DARK_GREEN_BLUE, 0},
+        {DARK_GREEN_DARK_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, DARK_GREEN_DARK_GREEN},
+        {DARK_GREEN_DARK_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_LIGHT_GREEN, DARK_GREEN_DARK_GREEN},
+        {0, DARK_GREEN_BLUE, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_DARK_GREEN, LIGHT_GREEN_DARK_GREEN, DARK_GREEN_BLUE, 0}
+    };
+
+    for (int i = 0; i < FROG_HEIGHT; i++) {
+        for (int j = 0; j < FROG_WIDTH; j++) {
+            if(denSprite[i][j] != L'n'){
+                wattron(game->gameWin, COLOR_PAIR(colors[i][j]));
+                mvwprintw(game->gameWin, y + i, x + j, "%lc", denSprite[i][j]);
+                wattroff(game->gameWin, COLOR_PAIR(colors[i][j]));
+            }
+        }
     } 
 }
 

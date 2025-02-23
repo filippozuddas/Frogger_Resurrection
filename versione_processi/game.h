@@ -5,10 +5,9 @@
 #include "frog.h"
 #include "map.h"
 #include "sprite.h"
-#include "colors.h"
 #include "struct.h"
-#include "map.h"
 #include "communication.h"
+#include "music.h"
 
 extern ScoreNode* scoreList;
 

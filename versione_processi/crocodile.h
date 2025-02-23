@@ -12,6 +12,7 @@
 #include <string.h>
 #include "struct.h"
 #include "game.h"
+//#include "communication.h"
 
 extern const char *crocSprite[CROC_HEIGHT][CROC_LENGHT];
 extern int flowDirection[N_FLOW]; 

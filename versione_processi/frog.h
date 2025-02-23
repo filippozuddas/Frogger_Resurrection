@@ -12,9 +12,11 @@
 #include <string.h>
 #include "struct.h"
 #include "game.h"
+//#include "communication.h"
 
 void createFrog(Game *game);
 void inputHandler(Game *game);
+void killFrog(Game *game);
 int checkCollision(Informations frogInfo, Informations crocInfo);
 int isFrogOnCroc(Game *game);
 int isFrogOnRiver(Game *game);

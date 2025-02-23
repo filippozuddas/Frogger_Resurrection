@@ -31,7 +31,7 @@ void animate_welcome() {
         exit(1);
     }
     
-const wchar_t *sprite[MAX_HEIGHT_WELCOME] = {
+    const wchar_t *sprite[MAX_HEIGHT_WELCOME] = {
 
     L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░      ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓██████████████▓▒░░▒▓████████▓▒░      ░▒▓████████▓▒░▒▓██████▓▒░             ",
     L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░            ",
@@ -115,7 +115,7 @@ void mainMenu(Game *game){
     int choice = 0;
     int c;
 
-    nodelay(game->gameWin, 0);  // Imposta un timeout di 0 per non bloccare
+    nodelay(menu_win, 0);  // Imposta un timeout di 0 per non bloccare
 
 
     keypad(menu_win, TRUE);

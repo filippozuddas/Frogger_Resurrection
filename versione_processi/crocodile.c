@@ -237,10 +237,7 @@ void resetCroc(Game *game) {
 
 void killCroc(Game *game) {
     for (int i = 0; i < N_CROC; i++) {
-        kill(game->crocodile[i].info.pid, SIGTERM); 
-    }
-
-    for (int i = 0; i < N_CROC; i++) {
+        kill(game->crocodile[i].info.pid, SIGKILL); 
         waitpid(game->crocodile[i].info.pid, NULL, 0); 
     }
 }
@@ -328,7 +325,7 @@ void handleProjectileGeneration(Game *game) {
             // Se abbiamo trovato uno slot libero...
             if (projectileIndex != -1) {
                 // Genera un ID univoco (usa un timestamp o un contatore globale)
-                static int nextProjectileID = 47; 
+                static int nextProjectileID = 57; 
                 int projectileID = nextProjectileID++;
 
 

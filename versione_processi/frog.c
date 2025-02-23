@@ -28,7 +28,7 @@ void createFrog(Game *game) {
     }
     else {
         frog->info.pid = pidFrog;
-        fprintf(stderr, "[PADRE Rana] Creata rana, PID figlio: %d\n", pidFrog); // DEBUG
+        //fprintf(stderr, "[PADRE Rana] Creata rana, PID figlio: %d\n", pidFrog); // DEBUG
     }
 }
 
@@ -82,6 +82,11 @@ void inputHandler(Game *game) {
     }
 }
 
+void killFrog(Game *game) {
+    kill(game->frog.info.pid, SIGKILL);
+    waitpid(game->frog.info.pid, NULL, 0);
+}
+
 
 int checkCollision(Informations frogInfo, Informations crocInfo) {
     if (frogInfo.y == crocInfo.y && 
@@ -108,7 +113,8 @@ int isFrogOnCroc(Game *game) {
 
 int isFrogOnRiver(Game *game) {
     // La rana è "nell'acqua" solo tra la riga 14 (inizio del fiume) e la riga 51 (fine del fiume)
-    if (game->frog.info.y > 14 && game->frog.info.y < 65) {
+    if ((game->frog.info.y > 14 && game->frog.info.y < 65) ||
+        (game->frog.info.y < 9 && !isFrogOnDen(game))) {
         return 1;  // La rana è nell'acqua
     }
     return 0;  // La rana non è nell'acqua
@@ -134,7 +140,7 @@ int isFrogOnDen(Game *game) {
 
 
 int isFrogOnTopBank(Game *game) {
-    if (game->frog.info.y >= 11 && game->frog.info.y <= 14) {
+    if (game->frog.info.y >= 9 && game->frog.info.y <= 12) {
         return 1; 
     }
     return 0;

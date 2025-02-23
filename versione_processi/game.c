@@ -34,14 +34,13 @@ void initGame(Game *game) {
 
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);
-    nodelay(game->gameWin, TRUE);
     start_color();
-
+    
     setColors(); 
     srand(time(NULL)); 
 
     game->isRunning = 1; 
-
+    
     if(pipe(game->pipeFd) < 0 || pipe(game->mainToFrogPipe) < 0) {
         perror("pipe creation error"); 
         exit(1); 
@@ -49,7 +48,7 @@ void initGame(Game *game) {
 
     setNonBlocking(game->mainToFrogPipe[0]);
     setNonBlocking(game->mainToFrogPipe[1]);
-
+    
     setNonBlocking(game->pipeFd[0]);  // Lettura
     setNonBlocking(game->pipeFd[1]);  // Scrittura
 
@@ -64,11 +63,25 @@ void initGame(Game *game) {
     }
     
     game->gameWin = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx);
+    nodelay(game->gameWin, TRUE);
     
     inizializza_mappa();
     initDens(game); 
     disegna_mappa(game);
 
+    if (!initAudio()) {
+        endwin();
+        exit(1);
+    }
+
+    // Imposta la musica di gioco in base alla difficoltà 
+    switch (game->difficulty) {
+        case 0: startMusic("../music/LIVELLO1(130BPM).wav"); break;
+        case 1: startMusic("../music/LIVELLO2(145BPM).wav"); break;
+        case 2: startMusic("../music/LIVELLO3(170BPM).wav"); break;
+        default: startMusic("../music/LIVELLO1(130BPM).wav"); break;
+    }
+    
     for (int i = 0; i < MAX_GRENADES; i++) {
         game->grenades[i].info.ID = -1;  
     }
@@ -79,37 +92,37 @@ void initGame(Game *game) {
 
 
 void runGame(Game* game) {
-
+    
     /* Creazione e inizializzazione dei coccodrilli e della rana (player) */
     createCroc(game);
     createFrog(game);
-
-    /*
-     * Per comodità creo dei puntatori per gestire le entità dinamiche, 
-     * senza dover scrivere ogni volta 'game->...'
-     */
-
     
+    /*
+    * Per comodità creo dei puntatori per gestire le entità dinamiche, 
+    * senza dover scrivere ogni volta 'game->...'
+    */
+   
+   
     Frog *frog = &game->frog;
     Crocodile *croc = game->crocodile;
     Grenade *grenades = game->grenades;
     Projectile *projectiles = game->projectiles; 
     
     /*
-     * Struttura Informations per memorizzare i dati (coordinate e altre info) letti dalla pipe, 
-     * provenienti dalle varie entità di gioco dinamiche 
-     */
+    * Struttura Informations per memorizzare i dati (coordinate e altre info) letti dalla pipe, 
+    * provenienti dalle varie entità di gioco dinamiche 
+    */
     Informations info;
-
+   
     /* Chiudo i lati delle pipe inutilizzati */
     close(game->mainToFrogPipe[0]);
-
+    
     /* Indice del del coccodrillo sul quale si trova la rana */
     int playerCrocIdx = 0;
     int grenadeID = N_CROC + 1; 
     int countdownTime = 90; // Tempo iniziale per il countdown in secondi
     int flag ;
-
+    
     // Imposta il tempo di gioco in base alla difficoltà
     switch (game->difficulty) {
         case 0: countdownTime = 60; break;
@@ -117,7 +130,7 @@ void runGame(Game* game) {
         case 2: countdownTime = 30; break;
         default: countdownTime = 60; break; 
     }
-    
+
     int millisecondCounter = 0;
     int timerMax = countdownTime;  // Impostiamo il valore massimo per la barra
     
@@ -144,11 +157,11 @@ void runGame(Game* game) {
         }
 
      
-     /* Lettura dalla pipe */
-     while(readData(game->pipeFd[0], &info, sizeof(Informations)) > 0){
-         /* ID = 0 corrisponde alla rana */
-         if (info.ID == 0) {
-             frog->info = info;
+        /* Lettura dalla pipe */
+        while(readData(game->pipeFd[0], &info, sizeof(Informations)) > 0){
+            /* ID = 0 corrisponde alla rana */
+            if (info.ID == 0) {
+                frog->info = info;
             }
             /* ID tra 1 e 16 corrispondono ai coccodrilli */
             else if (info.ID >= 1 && info.ID <= N_CROC) {
@@ -176,22 +189,18 @@ void runGame(Game* game) {
                 }
             }
 
-            /* ID tra 17 e 46 corrispondono alle granate della rana */
-            else if (info.ID > N_CROC && info.ID < 46){
-                int foundGrenade = 0;
+            /* ID tra 26 e 56 corrispondono alle granate della rana */
+            else if (info.ID > N_CROC && info.ID <= 56){
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (grenades[i].info.ID == info.ID) {
-                        // grenades[i].info.x = info.x; //Aggiorno solo x e y
-                        // grenades[i].info.y = info.y;
                         grenades[i].info = info;
                         //fprintf(stderr, "[PADRE] Ricevuto granata - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, grenades[i].info.pid); // DEBUG
-                        foundGrenade = 1;
                         break;
                     }
                 }
             }
-            /* ID > 26 corrispondono ai proiettili dei coccodrilli */
-            else if (info.ID > 46) {
+            /* ID > 56 corrispondono ai proiettili dei coccodrilli */
+            else if (info.ID > 56) {
                 int foundProjectile = 0;
                 for (int i = 0; i < MAX_PROJECTILES; i++) {
                     if (projectiles[i].info.ID == info.ID) {
@@ -282,6 +291,7 @@ void runGame(Game* game) {
                 handleScores(game, countdownTime, isDead);
                 game->isRunning = 0;
                 flag = 0;
+                stopMusic();
                 restartMenu(game, frog->score, flag); 
                 break;
             }
@@ -291,7 +301,7 @@ void runGame(Game* game) {
         
             resetCroc(game); 
             continue;
-}
+        }   
 
         
         
@@ -299,8 +309,10 @@ void runGame(Game* game) {
         werase(game->gameWin); 
         
         disegna_mappa(game);
+        wattron(game->gameWin, A_BOLD);
         mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
         mvwprintw(game->gameWin, 1, 10, "Score: %d", frog->score);
+        wattroff(game->gameWin, A_BOLD);
 
         drawLives(game->gameWin, frog->lives);     
         drawTimer(game, game->gameWin, countdownTime, timerMax);  // Chiama la funzione per disegnare la barra del timer
@@ -310,18 +322,9 @@ void runGame(Game* game) {
         }
         
         printFrog(game, game->gameWin, frog->info.x, frog->info.y);
-        
-        for (int i = 0; i < MAX_GRENADES; i++) {
-            if (grenades[i].info.ID != -1) {
-                mvwprintw(game->gameWin, grenades[i].info.y, grenades[i].info.x, "%s", "*");
-            }
-        }
-        
-        for (int i = 0; i < MAX_PROJECTILES; i++) {
-            if (projectiles[i].info.ID != -1) {
-                mvwprintw(game->gameWin, projectiles[i].info.y, projectiles[i].info.x, "0");
-            }
-        }
+
+        printGrenades(game);
+        printProjectiles(game);
         
         wrefresh(game->gameWin);
         
@@ -355,6 +358,7 @@ void runGame(Game* game) {
                 wrefresh(game->gameWin);  
                 game->isRunning = 0; 
                 flag = 1;
+                stopMusic();
                 restartMenu(game,frog->score, flag);
             }
 
@@ -371,9 +375,11 @@ void runGame(Game* game) {
 
 
 void stopGame(Game *game) {
+    terminateAudio();
     /* Uccido i processi coccodrillo */ 
     killCroc(game);
-    delwin(game->gameWin);
+    killFrog(game);
+    //delwin(game->gameWin);
 }
 
 
