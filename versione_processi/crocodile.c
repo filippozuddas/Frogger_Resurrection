@@ -37,20 +37,20 @@ void createCroc(Game *game) {
     
     switch (game->difficulty) {
         case 2:
-            MIN_V = 7;
-            MAX_V = 12;
+            MIN_V = 3;
+            MAX_V = 5;
             break;
         case 1:
-            MIN_V = 9;
-            MAX_V = 14;
+            MIN_V = 6;
+            MAX_V = 8;
             break;
         case 0:
-            MIN_V = 11;
-            MAX_V = 16;
+            MIN_V = 9;
+            MAX_V = 11;
             break;
         default:
             MIN_V = 9;
-            MAX_V = 14;
+            MAX_V = 11;
             break;
     }
 
@@ -85,7 +85,7 @@ void createCroc(Game *game) {
 
             // Controlla che crocID non superi il numero massimo di coccodrilli
             if (crocID - 1 >= N_CROC) {
-                fprintf(stderr, "Errore: crocID supera il numero massimo di coccodrilli\n");
+                //fprintf(stderr, "Errore: crocID supera il numero massimo di coccodrilli\n");
                 exit(EXIT_FAILURE);
             }
 
@@ -166,20 +166,20 @@ void resetCroc(Game *game) {
 
     switch (game->difficulty) {
         case 2:
-            MIN_V = 7;
-            MAX_V = 12;
+            MIN_V = 3;
+            MAX_V = 5;
             break;
         case 1:
-            MIN_V = 9;
-            MAX_V = 14;
+            MIN_V = 6;
+            MAX_V = 8;
             break;
         case 0:
-            MIN_V = 11;
-            MAX_V = 16;
+            MIN_V = 9;
+            MAX_V = 11;
             break;
         default:
             MIN_V = 9;
-            MAX_V = 14;
+            MAX_V = 11;
             break;
     }
 
@@ -248,7 +248,7 @@ void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID
     projectile.info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x; 
     projectile.info.y = croc->info.y + 2; 
     projectile.info.direction = croc->info.direction;
-    projectile.info.speed = 3;
+    projectile.info.speed = 2;
     projectile.info.ID = projectileID; 
 
     pid_t pid = fork();

@@ -94,8 +94,6 @@ int checkCollision(Informations frogInfo, Informations crocInfo) {
         frogInfo.x <= (crocInfo.x + CROC_LENGHT)) {
             return 1; 
         }
-
-
     return 0; 
 }
 
@@ -113,8 +111,7 @@ int isFrogOnCroc(Game *game) {
 
 int isFrogOnRiver(Game *game) {
     // La rana è "nell'acqua" solo tra la riga 14 (inizio del fiume) e la riga 51 (fine del fiume)
-    if ((game->frog.info.y > 14 && game->frog.info.y < 65) ||
-        (game->frog.info.y < 9 && !isFrogOnDen(game))) {
+    if (game->frog.info.y > 14 && game->frog.info.y < 65) {
         return 1;  // La rana è nell'acqua
     }
     return 0;  // La rana non è nell'acqua
@@ -129,7 +126,7 @@ int isFrogOnDen(Game *game) {
 
         if (den->isOpen &&
             frog->info.x >= den->x &&
-            frog->info.x + FROG_WIDTH <= den->x + den->width &&
+            frog->info.x <= den->x + den->width - 2 &&
             frog->info.y == den->y) {
             den->isOpen = 0;
             return 1;
@@ -146,6 +143,12 @@ int isFrogOnTopBank(Game *game) {
     return 0;
 }
 
+int isFrogOnTopRiver(Game *game) {
+    if (game->frog.info.y < 9 && isFrogOnDen(game) == 0) {
+        return 1; 
+    }
+    return 0; 
+}
 
 void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex) {
     Grenade grenade; 

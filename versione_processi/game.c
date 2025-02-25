@@ -8,13 +8,12 @@
 
 ScoreNode* scoreList = NULL;
 
-
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #define RED_HEARTS 29
 #define MAX_HEIGHT 6
 #define PATTERN_WIDTH 148
 
-
+/* Inizializzazione delle tane */
 void initDens(Game *game) {
     int denWidth = FROG_WIDTH; 
     int denHeight = FROG_HEIGHT; 
@@ -25,22 +24,19 @@ void initDens(Game *game) {
         game->dens[i].y = 5; 
         game->dens[i].width = denWidth;
         game->dens[i].height = denHeight;
-        game->dens[i].isOpen = 1; // 1 = aperta, 0 = chiusa
+        game->dens[i].isOpen = 1;   /* 1 = aperta, 0 = chiusa */
     }
 }
 
-
 void initGame(Game *game) {
-
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);
-    start_color();
-    
-    setColors(); 
+
     srand(time(NULL)); 
 
     game->isRunning = 1; 
     
+    /* Creazione delle pipe */
     if(pipe(game->pipeFd) < 0 || pipe(game->mainToFrogPipe) < 0) {
         perror("pipe creation error"); 
         exit(1); 
@@ -49,10 +45,10 @@ void initGame(Game *game) {
     setNonBlocking(game->mainToFrogPipe[0]);
     setNonBlocking(game->mainToFrogPipe[1]);
     
-    setNonBlocking(game->pipeFd[0]);  // Lettura
-    setNonBlocking(game->pipeFd[1]);  // Scrittura
-
+    setNonBlocking(game->pipeFd[0]);  
+    setNonBlocking(game->pipeFd[1]);  
     
+    /* Coordinate per la creazione della finestra di gioco */
     int startx = (COLS - GAME_WIDTH) / 2;
     int starty = (LINES - GAME_HEIGHT) / 2;
     
@@ -62,19 +58,17 @@ void initGame(Game *game) {
         exit(1);
     }
     
+    /* Creazione della finestra di gioco */
     game->gameWin = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx);
     nodelay(game->gameWin, TRUE);
     
     inizializza_mappa();
     initDens(game); 
     disegna_mappa(game);
+    
+    
 
-    if (!initAudio()) {
-        endwin();
-        exit(1);
-    }
-
-    // Imposta la musica di gioco in base alla difficoltà 
+    /* Imposta la musica di gioco in base alla difficoltà */
     switch (game->difficulty) {
         case 0: startMusic("../music/LIVELLO1(130BPM).wav"); break;
         case 1: startMusic("../music/LIVELLO2(145BPM).wav"); break;
@@ -82,6 +76,9 @@ void initGame(Game *game) {
         default: startMusic("../music/LIVELLO1(130BPM).wav"); break;
     }
     
+    /* Inizializzazione degli array relativi alle granate e ai proiettili.
+     * ID = -1 indica che quello slot dell'array è libero 
+     */
     for (int i = 0; i < MAX_GRENADES; i++) {
         game->grenades[i].info.ID = -1;  
     }
@@ -101,8 +98,6 @@ void runGame(Game* game) {
     * Per comodità creo dei puntatori per gestire le entità dinamiche, 
     * senza dover scrivere ogni volta 'game->...'
     */
-   
-   
     Frog *frog = &game->frog;
     Crocodile *croc = game->crocodile;
     Grenade *grenades = game->grenades;
@@ -115,15 +110,14 @@ void runGame(Game* game) {
     Informations info;
    
     /* Chiudo i lati delle pipe inutilizzati */
-    close(game->mainToFrogPipe[0]);
+    //close(game->mainToFrogPipe[0]);
     
-    /* Indice del del coccodrillo sul quale si trova la rana */
-    int playerCrocIdx = 0;
-    int grenadeID = N_CROC + 1; 
-    int countdownTime = 90; // Tempo iniziale per il countdown in secondi
-    int flag ;
+
+    int playerCrocID = 0;           /* ID del del coccodrillo sul quale si trova la rana */
+    int grenadeID = N_CROC + 1;     /* ID della granata, utilizzato durante la creazione */
+    int countdownTime = 90;         /* Tempo iniziale per il countdown in secondi */
     
-    // Imposta il tempo di gioco in base alla difficoltà
+    /* Imposta il tempo della manche in base alla difficoltà */
     switch (game->difficulty) {
         case 0: countdownTime = 60; break;
         case 1: countdownTime = 45; break;
@@ -135,27 +129,27 @@ void runGame(Game* game) {
     int timerMax = countdownTime;  // Impostiamo il valore massimo per la barra
     
     while (game->isRunning) {
-        usleep(6000);  // Controllo del timer ogni 6 millisecondi
+        usleep(6000);  /* Controllo del timer ogni 6 millisecondi */
     
         countdownTime = timerHandler(game, &millisecondCounter, countdownTime, timerMax); 
         int status;
         pid_t exited_pid;
         while ((exited_pid = waitpid(-1, &status, WNOHANG)) > 0) {
-            // Cerca e libera lo slot del proiettile/granata
+            /* Cerca e libera lo slot del proiettile/granata */
             for (int i = 0; i < MAX_PROJECTILES; i++) {
                 if (projectiles[i].info.pid == exited_pid) {
-                    projectiles[i].info.ID = -1; // Libera lo slot
+                    projectiles[i].info.ID = -1; /* Libera lo slot */
                     break;
                 }
             }
+            /* Stessa cosa per le granate */
             for (int i = 0; i < MAX_GRENADES; i++) {
                 if (grenades[i].info.pid == exited_pid) {
-                    grenades[i].info.ID = -1;   // Libera lo slot 
+                    grenades[i].info.ID = -1;   
                     break;
                 }
             }
         }
-
      
         /* Lettura dalla pipe */
         while(readData(game->pipeFd[0], &info, sizeof(Informations)) > 0){
@@ -163,11 +157,16 @@ void runGame(Game* game) {
             if (info.ID == 0) {
                 frog->info = info;
             }
-            /* ID tra 1 e 16 corrispondono ai coccodrilli */
+            /* ID tra 1 e 26 corrispondono ai coccodrilli */
             else if (info.ID >= 1 && info.ID <= N_CROC) {
                 croc[info.ID - 1].info = info; 
                 
-                if (playerCrocIdx == info.ID && frog->isOnCroc){
+                /* 
+                 * Caso in cui la rana si trova sopra un coccodrillo. 
+                 * Se l'ID del coccodrillo ricevuto, è uguale all'ID del coccodrillo sul quale si 
+                 * trova la rana, essa si muoverà insieme al coccodrillo
+                 */
+                if (playerCrocID == info.ID && frog->isOnCroc){
                     frog->info.x = info.x + frog->onCrocOffset;
                 }
             }
@@ -177,6 +176,7 @@ void runGame(Game* game) {
                 int direction = (info.ID == -1) ? 1 : -1; 
                 int grenadeIndex = -1; 
 
+                /* Trovo uno slot dell'array libero */
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (grenades[i].info.ID == -1) {
                         grenadeIndex = i; 
@@ -225,12 +225,20 @@ void runGame(Game* game) {
                     frog->info.x = ((GAME_WIDTH - 1) / 2) - 4;
                     frog->info.y = GAME_HEIGHT - 5;
                     frog->info.grenadesRemaining = 5;
-
+                    
+                    // Reset del timer quando la rana muore
+                    countdownTime = timerMax;  
+                    millisecondCounter = 0; 
+                    
                     if (frog->lives == 0) {
+                        stopMusic();
+                        int isDead = 1;
+                        handleScores(game, countdownTime, isDead);
                         game->isRunning = 0; 
+
                         break;
                     }
-
+                    
                     terminateGrenades(game);
                     terminateProjectiles(game);
                     resetCroc(game);
@@ -263,7 +271,8 @@ void runGame(Game* game) {
         }
         
         /* Verifico se la rana si trova sopra un coccodrillo */
-        playerCrocIdx = isFrogOnCroc(game);
+        playerCrocID = isFrogOnCroc(game);
+
         /* 
          * Attraverso una pipe inversa (dal padre al processo rana) comunico le nuove coordinate
          * alla rana, nel caso in cui sia sopra un coccodrillo  
@@ -271,67 +280,6 @@ void runGame(Game* game) {
         flushPipe(game->mainToFrogPipe[1]);
         writeData(game->mainToFrogPipe[1], &frog->info, sizeof(Informations));
 
-        /* Verifico se la rana è caduta in acqua */
-        if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
-            frog->info.x < 0 || frog->info.x + FROG_WIDTH > GAME_WIDTH) {
-            
-            frog->lives--; 
-            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
-            frog->info.y = GAME_HEIGHT - 5;
-            frog->info.grenadesRemaining = 5;
-            
-            // Reset del timer quando la rana muore
-            countdownTime = timerMax;  
-            millisecondCounter = 0; 
-            
-            if(frog->lives == 0) {
-                int isDead = 1;
-                close(game->pipeFd[0]);
-                close(game->mainToFrogPipe[1]);
-                handleScores(game, countdownTime, isDead);
-                game->isRunning = 0;
-                flag = 0;
-                stopMusic();
-                restartMenu(game, frog->score, flag); 
-                break;
-            }
-
-            terminateGrenades(game);
-            terminateProjectiles(game);
-        
-            resetCroc(game); 
-            continue;
-        }   
-
-        
-        
-        /* Stampo le entità di gioco */
-        werase(game->gameWin); 
-        
-        disegna_mappa(game);
-        wattron(game->gameWin, A_BOLD);
-        mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
-        mvwprintw(game->gameWin, 1, 10, "Score: %d", frog->score);
-        wattroff(game->gameWin, A_BOLD);
-
-        drawLives(game->gameWin, frog->lives);     
-        drawTimer(game, game->gameWin, countdownTime, timerMax);  // Chiama la funzione per disegnare la barra del timer
-   
-        for (int i = 0; i < N_CROC; i++) {
-            printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
-        }
-        
-        printFrog(game, game->gameWin, frog->info.x, frog->info.y);
-
-        printGrenades(game);
-        printProjectiles(game);
-        
-        wrefresh(game->gameWin);
-        
-        if (isFrogOnTopBank(game)) {
-            frog->score += 50; // Aggiungi punti per aver raggiunto la riva
-        }
-        
         /* Verifico se la rana è su una tana */
         if (isFrogOnDen(game)) {
             frog->score += 100; 
@@ -353,13 +301,15 @@ void runGame(Game* game) {
             }
         
             if (allDensClosed) {
-                sleep(1);  
+                int isDead = 0; 
+                handleScores(game, countdownTime, isDead);
                 werase(game->gameWin);
-                wrefresh(game->gameWin);  
-                game->isRunning = 0; 
-                flag = 1;
+                disegna_mappa(game);
+                wrefresh(game->gameWin);
                 stopMusic();
-                restartMenu(game,frog->score, flag);
+                game->isRunning = 0; 
+
+                break; 
             }
 
             terminateGrenades(game); 
@@ -367,6 +317,64 @@ void runGame(Game* game) {
         
             resetCroc(game); 
         }
+
+        /* Verifico se la rana è caduta in acqua */
+        if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
+            isFrogOnTopRiver(game) ||
+            frog->info.x < 0 || frog->info.x + FROG_WIDTH > GAME_WIDTH) {
+            
+            frog->lives--; 
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+            frog->info.y = GAME_HEIGHT - 5;
+            frog->info.grenadesRemaining = 5;
+            
+            // Reset del timer quando la rana muore
+            countdownTime = timerMax;  
+            millisecondCounter = 0; 
+            
+            if (frog->lives == 0) {
+                stopMusic();
+                int isDead = 1; 
+                handleScores(game, countdownTime, isDead);
+                game->isRunning = 0; 
+
+                break;
+            }
+
+            terminateGrenades(game);
+            terminateProjectiles(game);
+            resetCroc(game); 
+
+            continue;
+        } 
+
+        
+        
+        /* Stampo le entità di gioco */
+        werase(game->gameWin); 
+        
+        disegna_mappa(game);
+        wattron(game->gameWin, A_BOLD);
+        mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
+        mvwprintw(game->gameWin, 1, 10, "Score: %d", frog->score);
+        mvwprintw(game->gameWin, 1, 20, "Frog y: %d", frog->info.y);
+        wattroff(game->gameWin, A_BOLD);
+
+        drawLives(game->gameWin, frog->lives);     
+        drawTimer(game, game->gameWin, countdownTime, timerMax);  // Chiama la funzione per disegnare la barra del timer
+   
+        for (int i = 0; i < N_CROC; i++) {
+            printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
+        }
+        
+        printFrog(game, game->gameWin, frog->info.x, frog->info.y);
+
+        printGrenades(game);
+        printProjectiles(game);
+        
+        wrefresh(game->gameWin);
+        
+        
         
         usleep(5000);
 
@@ -375,11 +383,39 @@ void runGame(Game* game) {
 
 
 void stopGame(Game *game) {
-    terminateAudio();
+    close(game->pipeFd[0]);
+    close(game->pipeFd[1]);
+    close(game->mainToFrogPipe[0]);
+    close(game->mainToFrogPipe[1]);
+    for (int i = 0; i < N_CROC; i++) {
+        close(game->crocodile[i].mainToCrocPipe[0]);
+        close(game->crocodile[i].mainToCrocPipe[1]);
+    }
+
+    werase(game->gameWin); 
+    if (game->frog.lives == 0){
+        printGameOver(game->gameWin);
+        startMusic("../music/GAMEOVER.wav");
+    }
+    else {
+        printYouWon(game->gameWin); 
+    } 
+
+    digitsAnalyser(game->gameWin, game->frog.score, GAME_HEIGHT/2, GAME_WIDTH/2);
+
+    wattron(game->gameWin, A_BOLD);
+    mvwprintw(game->gameWin, GAME_HEIGHT - 25, (GAME_WIDTH / 2) - 22, "PREMI UN TASTO PER TORNARE AL MENU PRINCIPALE");
+    wattroff(game->gameWin, A_BOLD); 
+    wrefresh(game->gameWin); 
+    int ch; 
+    while((ch = wgetch(game->gameWin)) == ERR); 
+
     /* Uccido i processi coccodrillo */ 
     killCroc(game);
     killFrog(game);
-    //delwin(game->gameWin);
+
+    stopMusic();
+    delwin(game->gameWin);
 }
 
 
@@ -406,13 +442,13 @@ void printGameOver(WINDOW *win) {
         L" ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░       ░▒▓██████▓▒░   ░▒▓██▓▒░  ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░ "
     };
 
-    werase(win);
+    //werase(win);
     wattron(win, COLOR_PAIR(RED_HEARTS));
     for (int i = 0; i < 6; i++) {
-        mvwaddwstr(win, i+20, 25, pattern[i]);  // Spostato in basso
+        mvwaddwstr(win, i+20, (GAME_WIDTH - 121) / 2 , pattern[i]);  // Spostato in basso
     }
     wattroff(win, COLOR_PAIR(RED_HEARTS));
-    wrefresh(win);
+    //wrefresh(win);
 }
 
 
@@ -426,21 +462,32 @@ void printYouWon(WINDOW *win){
         L"   ░▒▓█▓▒░    ░▒▓██████▓▒░ ░▒▓██████▓▒░        ░▒▓█████████████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░ "
  };
 
-    werase(win);
+    //werase(win);
     wattron(win, COLOR_PAIR(RED_HEARTS));
-    for (int i = 0; i < 3; i++) {
-         mvwaddwstr(win, i+20, 25, pattern[i]);  // Spostato più in basso
+    for (int i = 0; i < 6; i++) {
+         mvwaddwstr(win, i+20, (GAME_WIDTH - 93) / 2 , pattern[i]);  // Spostato più in basso
     }
     wattroff(win, COLOR_PAIR(RED_HEARTS));
-    wrefresh(win);
+    //wrefresh(win);
 }
 
-void restartMenu(Game *game, int score, int flag) {
+int restartMenu(Game *game, int score, int flag) {
     init_pair(1, COLOR_RED, COLOR_BLACK);
-    werase(game->gameWin);
-    wrefresh(game->gameWin);
-    usleep(10000);
-    
+    // werase(game->gameWin);
+    // wrefresh(game->gameWin);
+    // usleep(10000);
+
+    int height = 70; 
+    int width = 200; 
+    int starty = (LINES - height) / 2; 
+    int startx = (COLS - width) / 2; 
+    WINDOW *restartWin = newwin(height, width, starty, startx); 
+    if (!restartWin) {
+        endwin();
+        fprintf(stderr, "Errore nella creazione della finestra di restart.\n");
+        exit(1);
+    }
+
     int highlight = 1;
     int choice = 0;
     int c;
@@ -451,26 +498,30 @@ void restartMenu(Game *game, int score, int flag) {
     } else if (flag == 1) {
         printYouWon(game->gameWin);
     }
+    // wrefresh(game->gameWin);
+    // sleep(1);
 
     // Calcola le posizioni per centrare il punteggio
     int centerX = 72;
-    int scoreY = GAME_HEIGHT - 22;  // Posizione Y dello score
+    int scoreY = height - 22;  // Posizione Y dello score
 
     // Stampa il punteggio grande
     digitsAnalyser(game->gameWin, score, scoreY, centerX);
+    wrefresh(game->gameWin);
+    sleep(3);
     
     // Verifica e aggiorna il display
-    wrefresh(game->gameWin);
+    //wrefresh(restartWin);
     addScore(&scoreList, game->frog.score);
     
     // Setup menu
-    keypad(game->gameWin, TRUE);
+    keypad(restartWin, TRUE);
     int n_choices = sizeof(restart) / sizeof(MenuOption);
-    print_menu(game->gameWin, highlight, restart, n_choices);
-    wrefresh(game->gameWin);
+    print_menu(restartWin, highlight, restart, n_choices);
+    wrefresh(restartWin);
 
     // Loop del menu
-    while ((c = wgetch(game->gameWin)) != 0) {
+    while ((c = wgetch(restartWin)) != 0) {
         switch (c) {
             case KEY_UP:
                 highlight = (highlight == 1) ? n_choices : highlight - 1;
@@ -480,27 +531,30 @@ void restartMenu(Game *game, int score, int flag) {
                 break;
             case 10:  // Invio
                 choice = highlight;
-                if (choice == 1) {
-                    wclear(game->gameWin);
-                    wrefresh(game->gameWin);
-                    initGame(game);
-                    runGame(game);
-                    stopGame(game);
-                    return;
-                } else if (choice == 2) {
-                    wclear(game->gameWin);
-                    wrefresh(game->gameWin);
-                    mainMenu(game);
-                    return;
-                }
+                break;
+                // if (choice == 1) {
+                //     wclear(game->gameWin);
+                //     wrefresh(game->gameWin);
+                //     initGame(game);
+                //     runGame(game);
+                //     stopGame(game);
+                //     return;
+                // } else if (choice == 2) {
+                //     wclear(game->gameWin);
+                //     wrefresh(game->gameWin);
+                //     mainMenu(game);
+                //     return;
+                // }
             default:
                 break;
         }
-        print_menu(game->gameWin, highlight, restart, n_choices);
-        wrefresh(game->gameWin);
+        print_menu(restartWin, highlight, restart, n_choices);
+        wrefresh(restartWin);
         if (choice != 0)
             break;
     }
+    delwin(restartWin);
+    return choice;
 }
 
 

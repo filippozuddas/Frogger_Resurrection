@@ -9,8 +9,44 @@ int main() {
     cbreak();
     noecho();
     curs_set(0);
+    start_color();
+    setColors();
+
+    /* Inizializzazione dell'audio per le musiche di gioco */
+    if (!initAudio()) {
+        endwin();
+        exit(1);
+    }
     
     Game game; 
-    showMenu(&game); 
+    int choice; 
+
+    startMusic("../music/WELCOME.wav");
+    animate_welcome();
+    stopMusic();
+    
+    startMusic("../music/MENU1.wav");
+
+    do {
+
+        choice = mainMenu(&game);
+
+        if (choice == 1) {
+            stopMusic();
+            initGame(&game);
+            runGame(&game);
+            stopGame(&game);
+            startMusic("../music/MENU1.wav");
+        }
+        else if (choice == 2) {
+            levelMenu(&game);
+        }
+        else if (choice == 3) {
+            displayScoreMenu(&game);
+        }
+    } while (choice != 4);
+
     endwin();
+    terminateAudio();
+    return 0; 
 }

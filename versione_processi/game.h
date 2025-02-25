@@ -24,7 +24,7 @@ int timerHandler(Game *game, int *millisecondCounter, int countdownTime, int tim
 void drawTimer(Game *game, WINDOW *win, int timeLeft, int timeMax) ;
 void drawLives(WINDOW *win, int lives);
 
-void restartMenu(Game *game, int score, int flag);
+//int restartMenu(Game *game, int score, int flag);
 void printGameOver(WINDOW *win);
 void printYouWon(WINDOW *win);
 

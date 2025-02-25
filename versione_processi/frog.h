@@ -22,6 +22,7 @@ int isFrogOnCroc(Game *game);
 int isFrogOnRiver(Game *game);
 int isFrogOnDen(Game *game);
 int isFrogOnTopBank(Game *game);
+int isFrogOnTopRiver(Game *game);
 void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex); 
 void moveGrenade(Grenade *grenade, Game *game, int grenadeIndex); 
 void terminateGrenades(Game *game);
