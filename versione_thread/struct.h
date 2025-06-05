@@ -1,5 +1,8 @@
 #pragma once
 
+#include "librerie.h"
+
+
 typedef struct {
     int x; 
     int y; 
@@ -12,7 +15,6 @@ typedef struct {
 typedef struct Crocodile{
     Informations info;
     pthread_t thread;
-    int projectilesRemaining; 
 } Crocodile;
 
 typedef struct Frog {

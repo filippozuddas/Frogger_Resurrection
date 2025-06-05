@@ -1,4 +1,3 @@
-#include "librerie.h"
 #include "menu.h"
 
 
@@ -9,72 +8,66 @@ int width = 130;  // Riduci un po' la larghezza della finestra
 int height = 35;  // Riduci un po' l'altezza della finestra
 
 
-
-void showMenu(Game *game) {
-    setlocale(LC_ALL, ""); // Only once, here
-    initscr();
-    cbreak();
-    noecho();
-    curs_set(0); // Only once, here
-    keypad(stdscr, TRUE); // Correct place, and now protected
-
-    animate_welcome();
-    mainMenu(game);
-    endwin();
-
-}
-
 void animate_welcome() {
     curs_set(0);
     nodelay(stdscr, TRUE);
     setlocale(LC_ALL, "");
     
-const wchar_t *sprite[MAX_HEIGHT_WELCOME] = {
+    if (!has_colors()) {
+        endwin();
+        fprintf(stderr, "Your terminal does not support colors.\n");
+        exit(1);
+    }
+    
+    const wchar_t *sprite[MAX_HEIGHT_WELCOME] = {
 
-    L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░      ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓██████████████▓▒░░▒▓████████▓▒░      ░▒▓████████▓▒░▒▓██████▓▒░             ",
-    L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░            ",
-    L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░            ",
-    L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░ ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░           ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░            ",
-    L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░            ",
-    L"  ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░            ",
-    L"   ░▒▓█████████████▓▒░░▒▓████████▓▒░▒▓████████▓▒░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░         ░▒▓█▓▒░   ░▒▓██████▓▒░             ",
-    L"                                                                                                                                                    ",
-    L"                                                                                                                                                    ",
-    L"                        ░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓████████▓▒░▒▓███████▓▒░                                  ",
-    L"                        ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                                 ",
-    L"                        ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                                 ",
-    L"                        ░▒▓██████▓▒░ ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒▒▓███▓▒░▒▓█▓▒▒▓███▓▒░▒▓██████▓▒░ ░▒▓███████▓▒░                                  ",
-    L"                        ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                                 ",
-    L"                        ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                                 ",
-    L"                        ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░                                 ",
-    L"                                                                                                                                                    ",
-    L"                                                                                                                                                    ",
-    L" ░▒▓███████▓▒░░▒▓████████▓▒░░▒▓███████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░",
-    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
-    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
-    L" ░▒▓███████▓▒░░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓██████▓▒░░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
-    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
-    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
-    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓██████▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░",                                                                                                                                                               
+    L"      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░      ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓██████████████▓▒░░▒▓████████▓▒░      ░▒▓████████▓▒░▒▓██████▓▒░        ",
+    L"      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░       ",
+    L"      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░       ",
+    L"      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░ ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░           ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░       ",
+    L"      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░       ",
+    L"      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░       ",
+    L"       ░▒▓█████████████▓▒░░▒▓████████▓▒░▒▓████████▓▒░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░         ░▒▓█▓▒░   ░▒▓██████▓▒░        ",
+    L"                                                                                                                                                      ",
+    L"                                                                                                                                                      ",
+    L"                             ░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓████████▓▒░▒▓███████▓▒░                              ",
+    L"                             ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                             ",
+    L"                             ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                             ",
+    L"                             ░▒▓██████▓▒░ ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒▒▓███▓▒░▒▓█▓▒▒▓███▓▒░▒▓██████▓▒░ ░▒▓███████▓▒░                              ",
+    L"                             ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                             ",
+    L"                             ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░                             ",
+    L"                             ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░                             ",
+    L"                                                                                                                                                      ",
+    L"                                                                                                                                                      ",
+    L" ░▒▓███████▓▒░░▒▓████████▓▒░░▒▓███████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░  ",
+    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ",
+    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ",
+    L" ░▒▓███████▓▒░░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓██████▓▒░░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ",
+    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ",
+    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ",
+    L" ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓██████▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░ ",                                                                                                                                                               
     };
     
-    starty = 15;
-    startx = 115;
+    int starty = 15;
+    //int startx = (COLS - 152) /2 ;
+    int startx = (COLS/2) - 75;
 
     for (int i = 0; i < MAX_HEIGHT_WELCOME; i++) {
-        mvaddwstr(starty + i, startx, sprite[i]); // Ora dovrebbe funzionare
+        mvaddwstr(starty + i, startx, sprite[i]);
         refresh();
-        usleep(300000);
+        usleep(135000);
 
+        // Se viene premuto un tasto, interrompi l'animazione
         if (getch() != ERR) {
             break;
         }
     }
-
+    
     clear();
     refresh();
-
+    
     curs_set(0);
+    setlocale(LC_ALL, "C.UTF-8");
 }
 
 void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choices) {
@@ -102,7 +95,7 @@ void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choice
 }
 
 
-void mainMenu(Game *game) {
+int mainMenu(Game *game) {
     init_window_position();
     WINDOW *menu_win = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx); // Usa le costanti
     int highlight = 1;
@@ -133,56 +126,23 @@ void mainMenu(Game *game) {
                     ++highlight;
                 break;
 
-            case 10:  // Invio
-            choice = highlight;
-            if (choice == 1) {
-                wclear(menu_win);
-                wrefresh(menu_win);
-    
-                // Debug: stampa un messaggio per verificare se startGame() viene chiamata
-                printf("Chiamo startGame()\n");
-    
-                startGame(game);
-    
-                // Debug: stampa un messaggio per verificare se startGame() è terminata
-                printf("startGame() terminata\n");
-    
-                // Torna al menu
-                print_menu(menu_win, highlight, menu, n_choices);
-                wrefresh(menu_win);
-                }
-                else if (choice == 2) {
-                    pthread_mutex_lock(&ncurses_mutex);
-                    wclear(menu_win);
-                    wrefresh(menu_win);
-                    pthread_mutex_unlock(&ncurses_mutex);
-                    levelMenu(game);
-                    return;
-                }
-                else if (choice == 3) {
-                    pthread_mutex_lock(&ncurses_mutex);
-                    wclear(menu_win);
-                    wrefresh(menu_win);
-                    pthread_mutex_unlock(&ncurses_mutex);
-                    displayScoreMenu(game);
-                    return;
-                }
-                else if (choice == 4) {
-                    return;  // Esci dal menu
-                }
-                break;
-
+            case '\n':  // Invio
+                choice = highlight;
+                delwin(menu_win);
+                return choice;
+            
             default:
                 break;
         }
 
         // Rileggi l'input dopo l'elaborazione dell'azione
         print_menu(menu_win, highlight, menu, n_choices);
-        wrefresh(menu_win); // Assicurati che il menu venga aggiornato dopo ogni cambiamento
-        }
     }
+    delwin(menu_win);
+    return 0; 
+}
 
-void levelMenu(Game *game){
+int levelMenu(Game *game){
 
     init_window_position();
     int highlight = 1;
@@ -214,48 +174,35 @@ void levelMenu(Game *game){
             case 10: // Tasto Invio
                 choice = highlight;
                 if(choice == 1){
-                    pthread_mutex_lock(&ncurses_mutex);
                     wclear(level_win);
                     wrefresh(level_win);
-                    pthread_mutex_unlock(&ncurses_mutex);
-                    game->difficulty = 0;
-                    mainMenu(game);
-                    return;
+                    delwin(level_win);
+                    game->difficulty = 0; 
+                    return choice; 
                 }
                 else if(choice == 2){
-                    pthread_mutex_lock(&ncurses_mutex);
                     wclear(level_win);
                     wrefresh(level_win);
-                    pthread_mutex_unlock(&ncurses_mutex);
-                    game->difficulty = 1;
-                    mainMenu(game);
-                    return;
+                    delwin(level_win);
+                    game->difficulty = 1; 
+                    return choice; 
                 }
                 else if(choice == 3){
-                    pthread_mutex_lock(&ncurses_mutex);
                     wclear(level_win);
                     wrefresh(level_win);
-                    pthread_mutex_unlock(&ncurses_mutex);
-                    game->difficulty = 2;
-                    mainMenu(game);
-                    return;
+                    delwin(level_win);
+                    game->difficulty = 2; 
+                    return choice; 
                 }
-                else if(choice == 0){
-                    pthread_mutex_lock(&ncurses_mutex);
-                    wclear(level_win);
-                    wrefresh(level_win);
-                    pthread_mutex_unlock(&ncurses_mutex);
-                    mainMenu(game);
-                    return;
-                }
+                
                 break;
             default:
                 break;
         }
         print_menu(level_win, highlight, level, n_choices);
-        if(choice != 0) // Esci dal ciclo se è stata fatta una scelta
-            break;
     }
+    delwin(level_win);
+    return 0; 
 }
 
 void init_window_position() {
@@ -332,27 +279,3 @@ void displayScoreMenu(Game *game) {
     mainMenu(game);
 }
 
-void startGame(Game *game) {
-
-    init_synchro();
-    // Debug: stampa un messaggio all'inizio di initGame()
-    printf("Inizio initGame()\n");
-
-    initGame(game);
-
-    // Debug: stampa un messaggio alla fine di initGame()
-    printf("Fine initGame()\n");
-
-    // Debug: stampa un messaggio all'inizio di runGame()
-    printf("Inizio runGame()\n");
-
-    runGame(game);
-
-    // Debug: stampa un messaggio alla fine di runGame()
-    printf("Fine runGame()\n");
-
-    printf("Chiamato stopGame()\n");
-    stopGame(game);
-    deallocate_synchro();
-
-}

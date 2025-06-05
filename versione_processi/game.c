@@ -376,7 +376,7 @@ void runGame(Game* game) {
         
         
         
-        usleep(5000);
+        usleep(10000);
 
     }
 }
@@ -399,6 +399,7 @@ void stopGame(Game *game) {
     }
     else {
         printYouWon(game->gameWin); 
+        startMusic("../music/YOUWIN.wav");
     } 
 
     digitsAnalyser(game->gameWin, game->frog.score, GAME_HEIGHT/2, GAME_WIDTH/2);

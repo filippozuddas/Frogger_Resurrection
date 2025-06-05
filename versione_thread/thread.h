@@ -1,9 +1,11 @@
 #pragma once
+
 #include "librerie.h" // Include librerie.h for Informations, etc.
-#include "struct.h"
+
 
 // Declare EXTERNAL variables (don't define them here)
 extern pthread_mutex_t buffer_mutex;
+extern pthread_mutex_t buffer2_mutex;
 extern pthread_mutex_t ncurses_mutex;
 extern pthread_mutex_t projectile_mutex; 
 extern pthread_mutex_t granades_mutex;
@@ -16,7 +18,7 @@ extern int index_write;
 extern int index_read;
 
 // Crocodile buffer
-extern Informations buffer2[DIM_BUFFER2];
+extern Informations buffer2[DIM_BUFFER];
 extern sem_t sem_free2;
 extern sem_t sem_occupied2;
 extern int index_write2;

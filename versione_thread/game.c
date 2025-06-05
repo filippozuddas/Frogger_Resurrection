@@ -1,8 +1,4 @@
-#include "librerie.h"
-#include "game.h"
-#include "thread.h" 
-
-    
+#include "game.h"    
 
 ScoreNode* scoreList = NULL;
 
@@ -24,8 +20,8 @@ void initDens(Game *game) {
 
 void initGame(Game *game) {
     
-    start_color();
-    setColors();
+    init_synchro();
+    
     srand(time(NULL)); // Seed random number generator
     
     const int startx = (COLS - GAME_WIDTH) / 2;
@@ -45,12 +41,22 @@ void initGame(Game *game) {
         perror("newwin failed"); // ALWAYS check for errors
         exit(1);
     }    
+
+    nodelay(game->gameWin, TRUE);
+    keypad(game->gameWin, TRUE); 
     
     // 2. Initialize and draw the map *IMMEDIATELY* after window creation
     inizializza_mappa(); // Sets up color pairs (must be inside ncurses_mutex)
     initDens(game);        // Calculate den positions (no ncurses calls)
-    disegna_mappa(game);  // Draws the map to game->gameWin (inside ncurses_mutex)
+    //disegna_mappa(game);  // Draws the map to game->gameWin (inside ncurses_mutex)
 
+    /* Imposta la musica di gioco in base alla difficoltà */
+    switch (game->difficulty) {
+        case 0: startMusic("../music/LIVELLO1(130BPM).wav"); break;
+        case 1: startMusic("../music/LIVELLO2(145BPM).wav"); break;
+        case 2: startMusic("../music/LIVELLO3(170BPM).wav"); break;
+        default: startMusic("../music/LIVELLO1(130BPM).wav"); break;
+    }
 
     // 3. Initialize game entities (grenades and projectiles - no thread creation yet)
     for (int i = 0; i < MAX_GRENADES; i++) {
@@ -68,9 +74,9 @@ void initGame(Game *game) {
 
 void runGame(Game* game) {
     
-    printf("runGame: isRunning = %d\n", game->isRunning); // Verifica il valore di isRunning
+    //printf("runGame: isRunning = %d\n", game->isRunning); // Verifica il valore di isRunning
 
-    //createCroc(game);  // Create crocodile threads
+    createCroc(game);  // Create crocodile threads
     createFrog(game);  // Create frog thread
     //createTimer(game);
 
@@ -82,11 +88,10 @@ void runGame(Game* game) {
     Informations info;
     
     
-    int playerCrocIdx = 0;
+    int playerCrocID = 0;
     int grenadeID = N_CROC + 1; 
-    int countdownTime = 90; // Tempo iniziale per il countdown in secondi
-    int flag ;
-    
+    int countdownTime = 90; // Tempo iniziale per il countdown in secondi    
+
     // Imposta il tempo di gioco in base alla difficoltà
     switch (game->difficulty) {
         case 0: countdownTime = 60; break;
@@ -102,52 +107,55 @@ void runGame(Game* game) {
         
         //------------------------- LETTURA DA MAIN BUFFER PER IDENTIFICARE OGGETTO ----------------------------------
         
-        //while(1){
-//
-        //    printf("runGame: inizio ciclo\n"); // Messaggio all'inizio del ciclo
-//
-        info = readMain();
-        if (info.ID != -1) { // Check if valid data was read
-            frog->info = info;
-        }
-
-        
+         
+        while(1){            
+            info = readMain();
             
+            if (info.ID == 0) { // Check if valid data was read
+                frog->info = info;
+            }
+            
+                
 
-            //// --- Read Crocodile Data (Non-blocking) ---
-            ///* ID tra 1 e 26 corrispondono ai coccodrilli */
-            //else if (info.ID >= 1 && info.ID <= N_CROC) {
-            //    croc[info.ID - 1].info = info; 
-//
-            //    if (playerCrocIdx == info.ID && frog->isOnCroc){
-            //        frog->info.x = info.x + frog->onCrocOffset;
-            //    }
-            //}
-//
-            ///* ID tra 27 e 46 corrispondono alle granate della rana */
-            //else if (info.ID > N_CROC && info.ID < 57){
-            //    int foundGrenade = 0;
-            //    for (int i = 0; i < MAX_GRENADES; i++) {
-            //        if (grenades[i].info.ID == info.ID) {
-            //            // grenades[i].info.x = info.x; //Aggiorno solo x e y
+            // --- Read Crocodile Data (Non-blocking) ---
+            /* ID tra 1 e 26 corrispondono ai coccodrilli */
+            
+            playerCrocID = isFrogOnCroc(game);
+
+            if (info.ID >= 1 && info.ID <= N_CROC) {
+                croc[info.ID - 1].info = info; 
+                if (playerCrocID == info.ID && frog->isOnCroc){
+                    if(croc[info.ID - 1].info.direction == 0){
+                        frog->info.x += 1;
+                    }
+                    else{
+                        frog->info.x += -1;
+                    }
+                }
+            }
+            //writeProd(frog->info);
+            
+            /* ID tra 27 e 46 corrispondono alle granate della rana */
+            // else if (info.ID > N_CROC && info.ID < 57){
+                //    for (int i = 0; i < MAX_GRENADES; i++) {
+                    //        if (grenades[i].info.ID == info.ID) {
+                        //            // grenades[i].info.x = info.x; //Aggiorno solo x e y
             //            // grenades[i].info.y = info.y;
             //            grenades[i].info = info;
             //            //fprintf(stderr, "[PADRE] Ricevuto granata - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, grenades[i].info.pid); // DEBUG
-            //            foundGrenade = 1;
             //            break;
             //        }
             //    }
-            //}
-//
-            ///* ID -1 e -2 usati come flag per creare le granate, rispettivamente destra e sinistra */
-            //else if (info.ID == -1 || info.ID == -2) {
+            // }
+            
+            //pthread_mutex_unlock(&buffer_mutex);
+            //writeProd(frog->info);
+            // /* ID -1 e -2 usati come flag per creare le granate, rispettivamente destra e sinistra */
+            // else if (info.ID == -1 || info.ID == -2) {
             //    int direction = (info.ID == -1) ? 1 : -1;
-//
             //    //createGrenade(game, direction); 
-            //}
-//
-            //else if (info.ID > 56) {
-//
+            // }
+            // else if (info.ID > 56) {
             //    int foundProjectile = 0;
             //    for (int i = 0; i < MAX_PROJECTILES; i++) {
             //        if (projectiles[i].info.ID == info.ID) {
@@ -157,30 +165,42 @@ void runGame(Game* game) {
             //            //fprintf(stderr, "[PADRE] Ricevuto proiettile - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, projectiles[i].info.pid); // DEBUG
             //            foundProjectile = 1;
             //            break;
-            //        
+                
             //        }
             //    }
-            //}
-
-        pthread_mutex_lock(&ncurses_mutex);
-
-        disegna_mappa(game);
-        mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->grenadesRemaining);
-        mvwprintw(game->gameWin, 1, 10, "Score: %d", frog->score);
-
-        printFrog(game, game->gameWin, frog->info.x, frog->info.y);
-        pthread_mutex_unlock(&ncurses_mutex);
-
-        wrefresh(game->gameWin);
-        wnoutrefresh(stdscr);
-
-        usleep(1000);
-        writeMain(frog->info);
+            // }
+            // pthread_mutex_unlock(&ncurses_mutex);
+            /* AGGIUNGERE CONTROLLI E COLLISIONI !!!!!!!!!!!!!!! */
+            
+            
+            pthread_mutex_lock(&ncurses_mutex);
+            werase(game->gameWin);
+            disegna_mappa(game);
+            // pthread_mutex_lock(&ncurses_mutex);
+            wattron(game->gameWin, A_BOLD); 
+            mvwprintw(game->gameWin, 1, 10, "Score: %d", frog->score);
+            mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->grenadesRemaining);
+            wattroff(game->gameWin, A_BOLD);
+            // pthread_mutex_unlock(&ncurses_mutex);
+            // pthread_mutex_lock(&ncurses_mutex);
+            // pthread_mutex_unlock(&ncurses_mutex);
+            for (int i = 0; i < N_CROC; i++) {
+                printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
+            }
+            // pthread_mutex_unlock(&ncurses_mutex);
+            
+            printFrog(game, game->gameWin, frog->info.x, frog->info.y);
+            wrefresh(game->gameWin);
+            // pthread_mutex_lock(&ncurses_mutex);
+            pthread_mutex_unlock(&ncurses_mutex);
+            
+            usleep(1000);
+        }
+        
     }
-    printf("runGame: fine\n");
 }
    
-//}
+
 
 
 
@@ -208,7 +228,7 @@ void stopGame(Game *game) {
       
         deallocate_synchro();
         
-    }
+}
     
     
     void printGameOver(WINDOW *win) {
@@ -221,13 +241,11 @@ void stopGame(Game *game) {
             L" ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░       ░▒▓██████▓▒░   ░▒▓██▓▒░  ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░ "
         };
         pthread_mutex_lock(&ncurses_mutex);
-        werase(win);
         wattron(win, COLOR_PAIR(RED_HEARTS));
         for (int i = 0; i < 6; i++) {
-            mvwaddwstr(win, i+20, 25, pattern[i]);  // Spostato in basso
+            mvwaddwstr(win, i+20, (GAME_WIDTH - 121) / 2, pattern[i]);  // Spostato in basso
         }
         wattroff(win, COLOR_PAIR(RED_HEARTS));
-        wrefresh(win);
         pthread_mutex_unlock(&ncurses_mutex);
     }
     
@@ -243,13 +261,11 @@ void stopGame(Game *game) {
      };
     
         pthread_mutex_lock(&ncurses_mutex);
-        werase(win);
         wattron(win, COLOR_PAIR(RED_HEARTS));
         for (int i = 0; i < 3; i++) {
-            mvwaddwstr(win, i+20, 25, pattern[i]);  // Spostato più in basso
+            mvwaddwstr(win, i+20, (GAME_WIDTH - 93) / 2, pattern[i]);  // Spostato più in basso
         }
         wattroff(win, COLOR_PAIR(RED_HEARTS));
-        wrefresh(win);
         pthread_mutex_unlock(&ncurses_mutex);
     }
     
@@ -403,7 +419,7 @@ void* timerThread(void* arg) {
             millisecondCounter = 0;
 
             // Blocca il mutex prima di accedere a game->isRunning
-            pthread_mutex_lock(&counter_mutex);
+            pthread_mutex_lock(&buffer_mutex);
 
             countdownTime--;
             if (countdownTime <= 0) {
@@ -411,19 +427,19 @@ void* timerThread(void* arg) {
                 game->isRunning = 0;
                 
                 // Sblocca il mutex prima di uscire
-                pthread_mutex_unlock(&counter_mutex); 
+                pthread_mutex_unlock(&buffer_mutex); 
                 pthread_exit(NULL);
             }
 
             // Sblocca il mutex dopo l'accesso
-            pthread_mutex_unlock(&counter_mutex); 
+            pthread_mutex_unlock(&buffer_mutex); 
         }
 
-        pthread_mutex_lock(&counter_mutex);
+        pthread_mutex_lock(&buffer_mutex);
         game->timer.countdownTime = countdownTime;
         game->timer.millisecondCounter = millisecondCounter;
         game->timer.timerMax = timerMax;
-        pthread_mutex_unlock(&counter_mutex);
+        pthread_mutex_unlock(&buffer_mutex);
     }
 
     pthread_exit(NULL);

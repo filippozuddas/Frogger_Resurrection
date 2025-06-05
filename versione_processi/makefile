@@ -34,3 +34,5 @@ music.o: music.c music.h game.h
 
 clean:
 	rm -f *.o frogger
+
+all: frogger

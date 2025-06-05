@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ncursesw/ncurses.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,16 +15,21 @@
 #include <wchar.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdbool.h>
+#include <math.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 
 #include "globali.h"
 #include "struct.h"
-#include "game.h"
-#include "crocodile.h"
-#include "thread.h"
-#include "colors.h"
-#include "frog.h"
+#include "music.h"
 #include "map.h"
+#include "colors.h"
 #include "menu.h"
-#include "sprite.h"
 #include "score.h"
+#include "sprite.h"
+#include "thread.h"
+#include "game.h"
+#include "frog.h"
+#include "crocodile.h"
 

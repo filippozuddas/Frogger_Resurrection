@@ -1,4 +1,3 @@
-#include "librerie.h"
 #include "map.h"
 
 
@@ -17,24 +16,24 @@ void disegna_blocco(WINDOW *win, int starty, int startx, int height, int width, 
         }
     }
     wattroff(win, COLOR_PAIR(color_pair));
-    wrefresh(win);
+    //wrefresh(win);
 }
 
 void disegna_mappa(Game *game) {
 
     // Disegna il marciapiede di partenza
-    disegna_blocco(game->gameWin, 5, 0, 9, GAME_WIDTH, 3);    // Argine superiore
-    disegna_blocco(game->gameWin, 14, 0, 51, GAME_WIDTH, 2);  // Fiume
-    disegna_blocco(game->gameWin, 65, 0, 5, GAME_WIDTH, 1);  // Argine inferiore   
+    disegna_blocco(game->gameWin, 5, 0, 60, GAME_WIDTH, 2);    // Argine superiore
+    disegna_blocco(game->gameWin, 9, 0, 4, GAME_WIDTH, 3);  // Fiume
+    disegna_blocco(game->gameWin, 65, 0, 4, GAME_WIDTH, 1);  // Argine inferiore   
 
     // Disegna 5 tane equidistanti
     for (int i = 0; i < N_DENS; i++) {
         Den *den = &game->dens[i];
         if (den->isOpen) {
-            disegna_blocco(game->gameWin, den->y, den->x, den->height, den->width, 1);
+            printDen(game, den->x, den->y);
         } else {
-            disegna_blocco(game->gameWin, den->y, den->x, den->height, den->width, 1); // You might want a different color for closed dens
-             printFrogOnDen(game->gameWin, den->x, den->y); // Draw the frog *on* the den
+            printDen(game, den->x, den->y);
+            printFrogOnDen(game->gameWin, den->x, den->y); // Draw the frog *on* the den
         }
     }
 }

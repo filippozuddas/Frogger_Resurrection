@@ -1,8 +1,6 @@
 #pragma once
 
-#include "struct.h"
-#include <ncursesw/ncurses.h>
-
+#include "librerie.h"
 
 extern const char *crocSprite[CROC_HEIGHT][CROC_LENGHT];
 extern int flowDirection[N_FLOW]; 
@@ -16,4 +14,4 @@ void createProjectile(Game *game, Crocodile *croc, int projectileID, int project
 void* moveProjectile(void* arg);
 void handleProjectileGeneration(Game *game);
 void terminateProjectiles(Game *game); 
-bool isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count);
+int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count);

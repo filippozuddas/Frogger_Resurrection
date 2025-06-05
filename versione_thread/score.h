@@ -1,5 +1,6 @@
-#include "struct.h"
-#include <ncursesw/ncurses.h>
+#pragma once
+
+#include "librerie.h"
 
 
 void handleScores(Game *game, int countdownTime, int isDead);

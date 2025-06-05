@@ -1,11 +1,51 @@
-#include "librerie.h"
-#include "struct.h"
-#include "thread.h" // Include thread.h for init_synchro
 
+#include "librerie.h"
 
 int main() {
+    //attiva i caratteri speciali dell'UNICODE
+    setlocale(LC_ALL, ""); 
+    initscr();
+    cbreak();
+    noecho();
+    curs_set(0);
+    start_color();
+    setColors();
 
-    Game game;
-    showMenu(&game);
-    return 0;
+    /* Inizializzazione dell'audio per le musiche di gioco */
+    if (!initAudio()) {
+        endwin();
+        exit(1);
+    }
+    
+    Game game; 
+    int choice; 
+
+    startMusic("../music/WELCOME.wav");
+    animate_welcome();
+    stopMusic();
+    
+    startMusic("../music/MENU1.wav");
+
+    do {
+
+        choice = mainMenu(&game);
+
+        if (choice == 1) {
+            stopMusic();
+            initGame(&game);
+            runGame(&game);
+            stopGame(&game);
+            startMusic("../music/MENU1.wav");
+        }
+        else if (choice == 2) {
+            levelMenu(&game);
+        }
+        else if (choice == 3) {
+            displayScoreMenu(&game);
+        }
+    } while (choice != 4);
+
+    endwin();
+    terminateAudio();
+    return 0; 
 }

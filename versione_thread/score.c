@@ -1,4 +1,4 @@
-#include "librerie.h"
+
 #include "score.h"
 
 

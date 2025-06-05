@@ -1,8 +1,4 @@
-#include "librerie.h"
 #include "crocodile.h"
-#include <stdbool.h> // Per usare bool
-#include <math.h>    // Per usare abs()
-#include "thread.h" 
 
 
 int flowDirection[N_FLOW];
@@ -10,13 +6,14 @@ int flowSpeed[N_FLOW];
 int MIN_V;
 int MAX_V;
 
-void createCroc(Game *game) {
+static pthread_t crocThreads[N_CROC];
 
+void createCroc(Game *game) {
     switch (game->difficulty) {
-        case 2: MIN_V = 7;  MAX_V = 12; break;
-        case 1: MIN_V = 9;  MAX_V = 14; break;
-        case 0: MIN_V = 11; MAX_V = 16; break;
-        default: MIN_V = 9;  MAX_V = 14; break;
+        case 2: MIN_V = 3; MAX_V = 5; break;
+        case 1: MIN_V = 6; MAX_V = 8; break;
+        case 0: MIN_V = 9; MAX_V = 11; break;
+        default: MIN_V = 9; MAX_V = 11; break;
     }
 
     srand(time(NULL)); // Inizializza il generatore di numeri casuali
@@ -24,77 +21,98 @@ void createCroc(Game *game) {
     int crocID = 1;
     int placedCrocCount = 0;
 
-    /* Inizializza la direzione (0 => destra; 1 => sinistra) e velocità dei flussi */
-    flowDirection[0] = rand() % 2; 
-    for (int i = 1; i < N_FLOW; i++) flowDirection[i] = !flowDirection[i - 1]; 
-    for (int i = 0; i < N_FLOW; i++) flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
+    // Inizializza la direzione (0 => destra; 1 => sinistra) e velocitÃ  dei flussi
+    flowDirection[0] = rand() % 2;
+    for (int i = 1; i < N_FLOW; i++) {
+        flowDirection[i] = !flowDirection[i - 1];
+    }
+    for (int i = 0; i < N_FLOW; i++) {
+        flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
+    }
 
     // Creazione dei coccodrilli (N_FLOW flussi, CROC_PER_FLOW ciascuno)
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
             int spawnY = (GAME_HEIGHT - 9) - (flow * CROC_HEIGHT);
-            int spawnX;
+            int spawnX = 0;
             int attempts = 0; // Contatore di tentativi
 
-            bool validPosition = false;
-
-            // Ciclo di posizionamento con limite di tentativi e gestione degli errori
-            do {
+            int validPosition = 0;
+            while (!validPosition) {
+                // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
                 spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
                 validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
-                attempts++;
+            }
 
-                if (attempts > 100) { // Limite di tentativi aumentato
-                    fprintf(stderr, "Impossibile trovare una posizione valida per il coccodrillo %d\n", crocID);
-                    // Invece di uscire, riduci il numero di coccodrilli per questo flusso
-                    break; 
-                }
-            } while (!validPosition);
+            /* DA LASCIARE COMMENTATO ALTRIMENTI STAMPA UN COCCODRILLO IN PIù*/
+            // do {
+            //     spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
+            //     validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
+            //     attempts++; 
+
+            //     if (attempts > 100) { // Limite di tentativi aumentato
+            //         fprintf(stderr, "Impossibile trovare una posizione valida per il coccodrillo %d\n", crocID);
+            //         // Invece di uscire, riduci il numero di coccodrilli per questo flusso
+            //         break;
+            //     }
+            // } while (!validPosition);
 
             if (validPosition) {
-                
-                // Alloca dinamicamente la memoria per il coccodrillo
-                Crocodile *croc = (Crocodile *)malloc(sizeof(Crocodile));
+                // Inizializzazione delle informazioni del coccodrillo PRIMA di creare il thread
+                game->crocodile[crocID - 1].info.x = spawnX;
+                game->crocodile[crocID - 1].info.y = spawnY;
+                game->crocodile[crocID - 1].info.direction = flowDirection[flow];
+                game->crocodile[crocID - 1].info.speed = flowSpeed[flow];
+                game->crocodile[crocID - 1].info.ID = crocID;
+                game->crocodile[crocID - 1].info.active = 1; // Imposta il coccodrillo come attivo
+                //game->crocodile[crocID - 1].projectilesRemaining = 3; // Initialize grenadesRemaining
 
-                if (croc == NULL) {
-                    perror("Failed to allocate memory for crocodile");
+                // Creazione del thread DOPO aver inizializzato le info
+                if (pthread_create(&game->crocodile[crocID - 1].thread, NULL, moveCroc, (void *)&game->crocodile[crocID - 1]) != 0) {
+                    perror("Failed to create crocodile thread");
                     exit(EXIT_FAILURE);
                 }
-
-                // Inizializzazione delle informazioni del coccodrillo *PRIMA* di creare il thread
-                croc->info.x = spawnX;
-                croc->info.y = spawnY;
-                croc->info.direction = flowDirection[flow];
-                croc->info.speed = flowSpeed[flow];
-                croc->info.ID = crocID;
-                croc->info.active = 1; // Imposta il coccodrillo come attivo
-                croc->projectilesRemaining = 3; // Initialize grenadesRemaining
-
-
-                // Creazione del thread *DOPO* aver inizializzato le info
-                //if (pthread_create(&croc->thread, NULL, (void *)moveCroc, (void*)&croc) != 0) {
-                //    perror("Failed to create crocodile thread");
-                //    exit(EXIT_FAILURE);
-                //    free(croc);
-//
-                //}
+                
 
                 crocID++;
                 placedCrocCount++;
-                printf("USCNEDO");
+            }
         }
     }
+}
+    
+    
+void* moveCroc(void* arg) {
+    Crocodile *croc = (Crocodile *)arg;
+    
+    while (1) {
+        if (croc->info.direction == 0) {
+            croc->info.x++;
+            if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT) {
+                croc->info.x = 0 - CROC_LENGHT;
+            }
+        } else {
+            croc->info.x--;
+            if (croc->info.x < -1 - CROC_LENGHT) {
+                croc->info.x = GAME_WIDTH - 1 + CROC_LENGHT;
+            }
+        }
+        
+        writeMain(croc->info);
+        usleep((MAX_V + MIN_V - croc->info.speed) * 10000); // Movimento
     }
+
+    pthread_exit(NULL);
 }
 
 
 void resetCroc(Game *game) {
     // Determine speed range based on difficulty
     switch (game->difficulty) {
-        case 2: MIN_V = 7;  MAX_V = 12; break;
-        case 1: MIN_V = 9;  MAX_V = 14; break;
-        case 0: MIN_V = 11; MAX_V = 16; break;
-        default: MIN_V = 9;  MAX_V = 14; break;
+        case 2: MIN_V = 3; MAX_V = 5; break;
+        case 1: MIN_V = 6; MAX_V = 8; break;
+        case 0: MIN_V = 9; MAX_V = 11; break;
+        default: MIN_V = 9; MAX_V = 11; break;
     }
 
     srand(time(NULL)); // Seed only once per game (moved to initGame)
@@ -151,7 +169,7 @@ void resetCroc(Game *game) {
             croc->info.speed = flowSpeed[flow];
             croc->info.ID = crocID;
             croc->info.active = 1;
-            croc->projectilesRemaining = 3; // Initialize grenadesRemaining
+            //croc->projectilesRemaining = 3; // Initialize grenadesRemaining
 
             writeProd(game->crocodile[j].info);
         }
@@ -162,32 +180,7 @@ void resetCroc(Game *game) {
     }
 }
 
-//void* moveCroc(void* arg) {
-//    Crocodile* croc = (Crocodile*)arg;
-//
-//    while (croc->info.active) {
-//        // Tentativo di leggere dal buffer con timeout
-//        if (sem_trywait(&sem_occupied2) == 0) { // Verifica se il semaforo è disponibile *immediatamente*
-//            croc->info = readProd(); // Legge solo se il semaforo è disponibile
-//            // Movement logic (codice di movimento invariato)
-//
-//        } else if (errno == EAGAIN) { // Se il semaforo non è disponibile
-//        
-//            printf("Buffer vuoto, il coccodrillo %d non si muove per questo ciclo\n", croc->info.ID); //Debug
-//          
-//            continue; // Continua al prossimo ciclo senza leggere
-//        }
-//         else {
-//            perror("Errore sem_trywait");
-//            exit(EXIT_FAILURE);
-//        }
-//
-//        usleep((MAX_V + MIN_V - croc->info.speed) * 10000); // Movimento
-//    }
-//
-//    free(croc);
-//    pthread_exit(NULL);
-//}
+
 
 void killCroc(Game *game) {
     // Cancel and join crocodile threads
@@ -236,8 +229,8 @@ void createProjectile(Game *game, Crocodile *croc, int projectileID, int project
     projectile->info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x - 1;
     projectile->info.y = croc->info.y; // +1 o -1?  Depends on your coordinate system
     projectile->info.direction = croc->info.direction;
-    projectile->info.speed = 3;
-    projectile->info.ID = 50 + projectileIndex;  // Unique ID (important!)
+    projectile->info.speed = 2;
+    projectile->info.ID = projectileID;  // Unique ID (important!)
     projectile->info.active = 1;
     pthread_mutex_unlock(&projectile_mutex); // UNLOCK
 
@@ -289,7 +282,7 @@ void handleProjectileGeneration(Game *game) {
             // Se abbiamo trovato uno slot libero...
             if (projectileIndex != -1) {
                 // Genera un ID univoco (usa un timestamp o un contatore globale)
-                static int nextProjectileID = 47; 
+                static int nextProjectileID = 57; 
                 int projectileID = nextProjectileID++;
 
 
@@ -301,7 +294,7 @@ void handleProjectileGeneration(Game *game) {
 }
 
 
-bool isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
+int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
     for (int i = 0; i < count; i++) {
         if (crocodiles[i].info.y == y_new) {
             // Calcola la distanza tra i bordi dei coccodrilli (non i centri)

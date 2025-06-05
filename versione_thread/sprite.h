@@ -1,7 +1,7 @@
 #pragma once
 
-#include "struct.h"
-#include <ncursesw/ncurses.h>
+#include "librerie.h"
+
 
 
 extern MenuOption menu[MENU_ITEMS];
@@ -11,3 +11,6 @@ extern MenuOption restart[RESTART_ITEMS];
 void printCroc(WINDOW *win, int x, int y, int direction); 
 void printFrog(Game *game, WINDOW *win, int x, int y); 
 void printFrogOnDen(WINDOW *win, int x, int y);
+void printGrenades(Game *game);
+void printProjectiles(Game *game);
+void printDen(Game *game, int x, int y);

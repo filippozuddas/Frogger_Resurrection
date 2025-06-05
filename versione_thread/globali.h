@@ -1,3 +1,5 @@
+#pragma once
+
 //Moltiplicando un valore RGB compreso tra 0 e 255 per questa costante, si converte il valore nella scala [0 - 1000] utilizzata da ncurses 
 #define RGB_CONVERTER 3.921569
 
@@ -41,5 +43,5 @@
 
 #define DIGIT_HEIGHT 3
 
-#define DIM_BUFFER 40
-#define DIM_BUFFER2 10
+#define DIM_BUFFER 100
+#define DIM_BUFFER2 100
