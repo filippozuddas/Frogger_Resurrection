@@ -194,7 +194,7 @@ void runGame(Game* game) {
             // pthread_mutex_lock(&ncurses_mutex);
             pthread_mutex_unlock(&ncurses_mutex);
             
-            usleep(1000);
+            usleep(100);
         }
         
     }

@@ -1,6 +1,7 @@
 #include <ncursesw/ncurses.h>
 #include "game.h"
 #include "menu.h"
+#include "socket.h"
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/time.h>
@@ -88,12 +89,12 @@ void initGame(Game *game) {
 }
 
 
-void runGame(Game* game) {
-    
+void runGame(Game* game, int game_socket_fd) {
+
     /* Creazione e inizializzazione dei coccodrilli e della rana (player) */
     createCroc(game);
     createFrog(game);
-    
+
     /*
     * Per comodità creo dei puntatori per gestire le entità dinamiche, 
     * senza dover scrivere ogni volta 'game->...'
@@ -108,6 +109,7 @@ void runGame(Game* game) {
     * provenienti dalle varie entità di gioco dinamiche 
     */
     Informations info;
+    Informations socketInfo;
    
     /* Chiudo i lati delle pipe inutilizzati */
     //close(game->mainToFrogPipe[0]);
@@ -150,15 +152,23 @@ void runGame(Game* game) {
                 }
             }
         }
+
+        if (receiveInfo(game_socket_fd, &socketInfo) > 0) {
+            if (socketInfo.ID == 0) {
+                frog->info = socketInfo;
+            }
+            else if (socketInfo.ID == -1 || socketInfo.ID == -2) {
+                if (frog->info.grenadesRemaining > 0) {
+                    writeData(game->pipeFd[1], &socketInfo, sizeof(Informations));
+                }
+            }
+        }
      
         /* Lettura dalla pipe */
         while(readData(game->pipeFd[0], &info, sizeof(Informations)) > 0){
-            /* ID = 0 corrisponde alla rana */
-            if (info.ID == 0) {
-                frog->info = info;
-            }
+            
             /* ID tra 1 e 26 corrispondono ai coccodrilli */
-            else if (info.ID >= 1 && info.ID <= N_CROC) {
+            if (info.ID >= 1 && info.ID <= N_CROC) {
                 croc[info.ID - 1].info = info; 
                 
                 /* 
@@ -272,6 +282,7 @@ void runGame(Game* game) {
         
         /* Verifico se la rana si trova sopra un coccodrillo */
         playerCrocID = isFrogOnCroc(game);
+        sendInfo(game_socket_fd, &frog->info);
 
         /* 
          * Attraverso una pipe inversa (dal padre al processo rana) comunico le nuove coordinate
@@ -413,7 +424,7 @@ void stopGame(Game *game) {
 
     /* Uccido i processi coccodrillo */ 
     killCroc(game);
-    killFrog(game);
+    //killFrog(game);
 
     stopMusic();
     delwin(game->gameWin);

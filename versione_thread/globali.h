@@ -5,7 +5,7 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-#define N_FLOW 13
+#define N_FLOW 8
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
@@ -43,5 +43,5 @@
 
 #define DIGIT_HEIGHT 3
 
-#define DIM_BUFFER 100
-#define DIM_BUFFER2 100
+#define DIM_BUFFER 300
+#define DIM_BUFFER2 300

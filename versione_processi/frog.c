@@ -14,78 +14,76 @@ void createFrog(Game *game) {
     frog->score = 0; 
     frog->isOnCroc = 0; 
 
-    pid_t pidFrog = fork(); 
+    // pid_t pidFrog = fork(); 
 
-    if (pidFrog < 0) {
-        perror("Fork failed"); 
-        exit(1); 
-    }
-    else if(pidFrog == 0) {
-        close(game->pipeFd[0]);
-        close(game->mainToFrogPipe[1]); 
-        inputHandler(game); 
-        exit(0); 
-    }
-    else {
-        frog->info.pid = pidFrog;
-        //fprintf(stderr, "[PADRE Rana] Creata rana, PID figlio: %d\n", pidFrog); // DEBUG
-    }
+    // if (pidFrog < 0) {
+    //     perror("Fork failed"); 
+    //     exit(1); 
+    // }
+    // else if(pidFrog == 0) {
+    //     runInputClient();
+    //     exit(0); 
+    // }
+    // else {
+    //     frog->info.pid = pidFrog;
+    //     //fprintf(stderr, "[PADRE Rana] Creata rana, PID figlio: %d\n", pidFrog); // DEBUG
+    // }
 }
 
-void inputHandler(Game *game) { 
+// void inputHandler(Game *game) { 
 
-      while(1) {
+//       while(1) {
 
-        readData(game->mainToFrogPipe[0], &game->frog.info, sizeof(Informations));
+//         readData(game->mainToFrogPipe[0], &game->frog.info, sizeof(Informations));
 
-        int input = getch(); 
+//         int input = getch(); 
         
-        switch(input) {
-            case 'w':
-            case 'W':
-            case KEY_UP:
-                game->frog.info.y = (game->frog.info.y > 0) ? game->frog.info.y - FROG_HEIGHT : game->frog.info.y;
-                break;
-            case 's':
-            case 'S':
-            case KEY_DOWN:
-                game->frog.info.y = (game->frog.info.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? game->frog.info.y + FROG_HEIGHT : game->frog.info.y;
-                break;
-            case 'd':
-            case 'D':
-            case KEY_RIGHT:
-                game->frog.info.x = (game->frog.info.x < GAME_WIDTH - FROG_WIDTH) ? game->frog.info.x + 1 : game->frog.info.x;
-                break;
-            case 'a':
-            case 'A':
-            case KEY_LEFT:
-                game->frog.info.x = (game->frog.info.x > 0) ? game->frog.info.x - 1 : game->frog.info.x;
-                break;
-            case ' ': 
-                if (game->frog.info.grenadesRemaining > 0) {
-                    Informations grenadeSignal;
-                    grenadeSignal.ID = -1; // -1 per granata a destra
-                    writeData(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
+//         switch(input) {
+//             case 'w':
+//             case 'W':
+//             case KEY_UP:
+//                 game->frog.info.y = (game->frog.info.y > 0) ? game->frog.info.y - FROG_HEIGHT : game->frog.info.y;
+//                 break;
+//             case 's':
+//             case 'S':
+//             case KEY_DOWN:
+//                 game->frog.info.y = (game->frog.info.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? game->frog.info.y + FROG_HEIGHT : game->frog.info.y;
+//                 break;
+//             case 'd':
+//             case 'D':
+//             case KEY_RIGHT:
+//                 game->frog.info.x = (game->frog.info.x < GAME_WIDTH - FROG_WIDTH) ? game->frog.info.x + 1 : game->frog.info.x;
+//                 break;
+//             case 'a':
+//             case 'A':
+//             case KEY_LEFT:
+//                 game->frog.info.x = (game->frog.info.x > 0) ? game->frog.info.x - 1 : game->frog.info.x;
+//                 break;
+//             case ' ': 
+//                 if (game->frog.info.grenadesRemaining > 0) {
+//                     Informations grenadeSignal;
+//                     grenadeSignal.ID = -1; // -1 per granata a destra
+//                     writeData(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
 
-                    grenadeSignal.ID = -2; // -2 per granata a sinistra
-                    writeData(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
+//                     grenadeSignal.ID = -2; // -2 per granata a sinistra
+//                     writeData(game->pipeFd[1], &grenadeSignal, sizeof(Informations));
 
-                    game->frog.info.grenadesRemaining--;
-                }
+//                     game->frog.info.grenadesRemaining--;
+//                 }
 
-                break;
-            default:
-                continue;
-        }
+//                 break;
+//             default:
+//                 continue;
+//         }
         
-        writeData(game->pipeFd[1], &game->frog.info, sizeof(Informations)); 
-    }
-}
+//         writeData(game->pipeFd[1], &game->frog.info, sizeof(Informations)); 
+//     }
+// }
 
-void killFrog(Game *game) {
-    kill(game->frog.info.pid, SIGKILL);
-    waitpid(game->frog.info.pid, NULL, 0);
-}
+// void killFrog(Game *game) {
+//     kill(game->frog.info.pid, SIGKILL);
+//     waitpid(game->frog.info.pid, NULL, 0);
+// }
 
 
 int checkCollision(Informations frogInfo, Informations crocInfo) {
