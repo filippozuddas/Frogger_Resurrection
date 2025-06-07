@@ -9,47 +9,53 @@ static void runInputClient(int client_socket_fd) {
     nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
 
-    Informations current_pos;
-    current_pos.x = 0;
-    current_pos.y = 0;
-    current_pos.grenadesRemaining = 0;
+    Informations current_msg;
+    current_msg.x = 0;
+    current_msg.y = 0;
+    current_msg.grenadesRemaining = 0;
     
-    Informations new_pos;
+    Informations new_msg;
 
     while (true) {
-        receiveInfo(client_socket_fd, &current_pos);
+        ssize_t recv_result = receiveInfo(client_socket_fd, &current_msg);
+        
+        // Verifica se il server ha inviato un segnale di terminazione
+        if (recv_result > 0 && current_msg.ID == -99) {
+            // Ricevuto segnale di terminazione dal server
+            break;
+        }
 
         int input = getch();
 
         bool has_input = true;
-        new_pos = current_pos;
+        new_msg = current_msg;
 
         switch (input) {
             case 'w': 
             case 'W': 
             case KEY_UP:
-                new_pos.y = (current_pos.y > 0) ? current_pos.y - FROG_HEIGHT : current_pos.y;
+                new_msg.y = (current_msg.y > 0) ? current_msg.y - FROG_HEIGHT : current_msg.y;
                 break;
             case 's': 
             case 'S': 
             case KEY_DOWN:
-                new_pos.y = (current_pos.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? current_pos.y + FROG_HEIGHT : current_pos.y;
+                new_msg.y = (current_msg.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? current_msg.y + FROG_HEIGHT : current_msg.y;
                 break;
             
             case 'a': 
             case 'A': 
             case KEY_LEFT:
-                new_pos.x = (current_pos.x > 0) ? current_pos.x - 1 : current_pos.x;
+                new_msg.x = (current_msg.x > 0) ? current_msg.x - 1 : current_msg.x;
                 break;
             
             case 'd': 
             case 'D': 
             case KEY_RIGHT:
-                new_pos.x = (current_pos.x < GAME_WIDTH - FROG_WIDTH) ? current_pos.x + 1 : current_pos.x;
+                new_msg.x = (current_msg.x < GAME_WIDTH - FROG_WIDTH) ? current_msg.x + 1 : current_msg.x;
                 break;
             case ' ':
             {
-                if (current_pos.grenadesRemaining > 0) {
+                if (current_msg.grenadesRemaining > 0) {
                     Informations grenade_signal;
                     grenade_signal.ID = -1;
                     sendInfo(client_socket_fd, &grenade_signal);
@@ -65,8 +71,8 @@ static void runInputClient(int client_socket_fd) {
         }
 
         if (has_input) {
-            new_pos.ID = 0;
-            if (sendInfo(client_socket_fd, &new_pos) < 0) {
+            new_msg.ID = 0;
+            if (sendInfo(client_socket_fd, &new_msg) < 0) {
                 perror("sendInfo failed");
                 break; 
             }
@@ -92,6 +98,6 @@ int main() {
 
     close(client_socket_fd);
     endwin();
-    printf("Client terminato.\n");
+    printf("Client terminato. Il server ha chiuso la connessione.\n");
     return 0;
 }

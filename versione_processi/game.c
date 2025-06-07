@@ -38,14 +38,11 @@ void initGame(Game *game) {
     game->isRunning = 1; 
     
     /* Creazione delle pipe */
-    if(pipe(game->pipeFd) < 0 || pipe(game->mainToFrogPipe) < 0) {
+    if(pipe(game->pipeFd) < 0) {
         perror("pipe creation error"); 
         exit(1); 
     }
 
-    setNonBlocking(game->mainToFrogPipe[0]);
-    setNonBlocking(game->mainToFrogPipe[1]);
-    
     setNonBlocking(game->pipeFd[0]);  
     setNonBlocking(game->pipeFd[1]);  
     
@@ -110,10 +107,6 @@ void runGame(Game* game, int game_socket_fd) {
     */
     Informations info;
     Informations socketInfo;
-   
-    /* Chiudo i lati delle pipe inutilizzati */
-    //close(game->mainToFrogPipe[0]);
-    
 
     int playerCrocID = 0;           /* ID del del coccodrillo sul quale si trova la rana */
     int grenadeID = N_CROC + 1;     /* ID della granata, utilizzato durante la creazione */
@@ -160,6 +153,7 @@ void runGame(Game* game, int game_socket_fd) {
             else if (socketInfo.ID == -1 || socketInfo.ID == -2) {
                 if (frog->info.grenadesRemaining > 0) {
                     writeData(game->pipeFd[1], &socketInfo, sizeof(Informations));
+                    frog->info.grenadesRemaining--;
                 }
             }
         }
@@ -234,7 +228,7 @@ void runGame(Game* game, int game_socket_fd) {
                     frog->lives--;
                     frog->info.x = ((GAME_WIDTH - 1) / 2) - 4;
                     frog->info.y = GAME_HEIGHT - 5;
-                    frog->info.grenadesRemaining = 5;
+                    frog->info.grenadesRemaining = 10;
                     
                     // Reset del timer quando la rana muore
                     countdownTime = timerMax;  
@@ -294,7 +288,7 @@ void runGame(Game* game, int game_socket_fd) {
         /* Verifico se la rana è su una tana */
         if (isFrogOnDen(game)) {
             frog->score += 100; 
-            frog->info.grenadesRemaining = 5;
+            frog->info.grenadesRemaining = 10;
             frog->info.x = ((GAME_WIDTH - 1) / 2) - 4;
             frog->info.y = GAME_HEIGHT - 5;
             wrefresh(game->gameWin);
@@ -337,7 +331,7 @@ void runGame(Game* game, int game_socket_fd) {
             frog->lives--; 
             frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
             frog->info.y = GAME_HEIGHT - 5;
-            frog->info.grenadesRemaining = 5;
+            frog->info.grenadesRemaining = 10;
             
             // Reset del timer quando la rana muore
             countdownTime = timerMax;  
@@ -424,7 +418,6 @@ void stopGame(Game *game) {
 
     /* Uccido i processi coccodrillo */ 
     killCroc(game);
-    //killFrog(game);
 
     stopMusic();
     delwin(game->gameWin);

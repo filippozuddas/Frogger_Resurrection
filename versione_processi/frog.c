@@ -9,7 +9,7 @@ void createFrog(Game *game) {
     frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
     frog->info.y = GAME_HEIGHT - 5; 
     frog->info.ID = 0;
-    frog->info.grenadesRemaining = 5; 
+    frog->info.grenadesRemaining = 10; 
     frog->lives = 3; 
     frog->score = 0; 
     frog->isOnCroc = 0; 

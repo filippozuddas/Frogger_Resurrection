@@ -65,6 +65,11 @@ int main() {
         }
     } while (choice != 4);
 
+    // Invia segnale di terminazione al client quando l'utente esce
+    Informations exit_signal;
+    exit_signal.ID = -99; // Codice speciale per indicare terminazione
+    sendInfo(game_socket_fd, &exit_signal);
+    
     close(game_socket_fd);
     close(server_socket_fd);
 
