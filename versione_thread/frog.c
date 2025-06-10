@@ -9,97 +9,10 @@ void createFrog(Game *game) {
     game->frog.info.x = ((GAME_WIDTH - 1) / 2) - 4;
     game->frog.info.y = GAME_HEIGHT - 5;
     game->frog.info.ID = 0;
-    game->frog.grenadesRemaining = 5;
+    game->frog.info.grenadesRemaining = 5;
     game->frog.lives = 3;
     game->frog.score = 0;
-    game->frog.isOnCroc = 0;
-
-    
-    //pthread_create(&game->frog.thread, NULL, inputHandler, (void*)game);
-    if (pthread_create(&game->frog.thread, NULL, (void *)inputHandler, (void *)game) != 0) {
-        perror("Failed to create frog thread");
-        exit(EXIT_FAILURE);
-   }
-
-    
-}
-
-void* inputHandler(void* params) {
-
-    Game *game = (Game*)params;
-    Informations frogInfo;
-    int c;
-
-
-    // creo struttura per salvare da lettura
-
-    while (game->isRunning) { // Leggi dalla finestra corretta
-        
-        pthread_mutex_lock(&ncurses_mutex);
-        c = wgetch(game->gameWin);
-        pthread_mutex_unlock(&ncurses_mutex);
-
-        // frogInfo = readProd(); // legge le informazioni dal buffer condiviso con il consumatore
-
-        // if (frogInfo.ID == 0) {
-        //     game->frog.info.x = frogInfo.x;
-        // }
-
-        if(c != ERR){
-            //pthread_mutex_lock(&buffer_mutex);
-            switch (c) {
-                case 'w':
-                case 'W':
-                case KEY_UP:
-                    game->frog.info.y = (game->frog.info.y > 0) ? game->frog.info.y - FROG_HEIGHT : game->frog.info.y;
-                    break;
-                case 's':
-                case 'S':
-                case KEY_DOWN:
-                    game->frog.info.y = (game->frog.info.y < GAME_HEIGHT - FROG_HEIGHT - 1) ? game->frog.info.y + FROG_HEIGHT : game->frog.info.y;
-                    break;
-                case 'd':
-                case 'D':
-                case KEY_RIGHT:
-                    game->frog.info.x = (game->frog.info.x < GAME_WIDTH - FROG_WIDTH) ? game->frog.info.x + 1 : game->frog.info.x;
-                    break;
-                case 'a':
-                case 'A':
-                case KEY_LEFT:
-                    game->frog.info.x = (game->frog.info.x > 0) ? game->frog.info.x - 1 : game->frog.info.x;
-                    break;
-               // case ' ': // Spacebar for grenade
-               //     if (game->frog.grenadesRemaining > 0) {
-               //         Informations grenadeSignal;
-               //         grenadeSignal.ID = -1; // -1 per granata a destra
-               //         writeMain(grenadeSignal);
-//
-               //         grenadeSignal.ID = -2; // -2 per granata a sinistra
-               //         writeMain(grenadeSignal);
-//
-               //         game->frog.grenadesRemaining--;
-               // }
-                break;
-                case 'q': //Add exit condition
-                case 'Q':
-                    game->isRunning = 0;
-                    pthread_exit(NULL);
-                    break;
-            }
-
-            //pthread_mutex_lock(&buffer_mutex);
-            writeMain(game->frog.info);
-            //pthread_mutex_unlock(&buffer_mutex);
-            //usleep(1000);
-    
-        }
-
-        // readProd(frogInfo); 
-        // pthread_mutex_lock(&buffer2_mutex);
-        // game->frog.info = frogInfo;
-        // pthread_mutex_unlock(&buffer2_mutex);
-    }
-    pthread_exit(NULL);
+    game->frog.isOnCroc = 0;    
 }
     
 void createGrenade(Game *game, int direction){
@@ -197,39 +110,28 @@ int checkCollisionProjectile(Informations obj1, Projectile obj2) {
 }
 
 int isFrogOnCroc(Game *game) {
-
-    //pthread_mutex_lock(&buffer_mutex);
-    // for (int i = 0; i < N_CROC; i++) {
-    //     // Check for overlap on the y-axis (same row)
-    //     if (game->frog.info.y == game->crocodile[i].info.y) {
-    //         // Check for overlap on the x-axis
-    //         if (game->frog.info.x + FROG_WIDTH > game->crocodile[i].info.x &&
-    //             game->frog.info.x < game->crocodile[i].info.x + CROC_LENGHT) {
-    //             // Frog is on a crocodile
-    //             game->frog.isOnCroc = 1;
-    //             game->frog.onCrocIdx = i;
-    //             game->frog.onCrocOffset = game->frog.info.x - game->crocodile[i].info.x; // Store offset
-    //             //pthread_mutex_unlock(&buffer_mutex);
-    //             return i + 1; // Return crocodile index +1 (ID)
-    //         }
-    //     }
-    // }
-
-    // game->frog.isOnCroc = 0; // Not on any crocodile
-    // game->frog.onCrocIdx = -1; // Reset index
-    // game->frog.onCrocOffset = 0; // Reset offset
-    // //pthread_mutex_unlock(&buffer_mutex);
-    // return 0; // Not on a crocodile
+    bool wasOnCroc = game->frog.isOnCroc;
 
     for (int i = 0; i < N_CROC; i++) {
-        if(checkCollision(game->frog.info, game->crocodile[i].info)) {
-            game->frog.onCrocOffset = game->frog.info.x - game->crocodile[i].info.x;
-            game->frog.isOnCroc = 1; 
-            return i + 1; 
+        if (checkCollision(game->frog.info, game->crocodile[i].info)) {
+            
+            // La rana è su un coccodrillo
+            game->frog.isOnCroc = true;
+
+            // Calcola l'offset SOLO se la rana non era già su un coccodrillo nel frame precedente.
+            // Questo succede solo nel momento esatto in cui atterra.
+            if (!wasOnCroc) {
+                game->frog.onCrocOffset = game->frog.info.x - game->crocodile[i].info.x;
+            }
+            
+            return i + 1; // Ritorna l'ID del coccodrillo su cui si trova
         }
     }
-    game->frog.isOnCroc = 0; 
-    return 0; 
+
+    // Se il ciclo finisce, la rana non è su nessun coccodrillo
+    game->frog.isOnCroc = false;
+    return 0;
+
 }
 
 int isFrogOnRiver(Game *game) {

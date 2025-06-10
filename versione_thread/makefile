@@ -1,30 +1,37 @@
-# Regola principale per la creazione dell'eseguibile
-frogger: main.o menu.o crocodile.o frog.o game.o sprite.o colors.o map.o thread.o score.o music.o
-	gcc -w  -g main.o menu.o crocodile.o frog.o game.o sprite.o colors.o map.o thread.o score.o music.o -o frogger -pthread -lncursesw -lmenuw -lSDL2 -lSDL2_mixer -fsanitize=address
+# Regola principale per creare entrambi gli eseguibili
+all: frogger_server frogger_client
+
+# Regola per la creazione dell'eseguibile frogger (server)
+frogger_server: main.o menu.o crocodile.o frog.o game.o sprite.o colors.o map.o thread.o score.o music.o socket.o
+	gcc -w -g $^ -o frogger_server -pthread -lncursesw -lmenuw -lSDL2 -lSDL2_mixer 
+
+# Regola per la creazione dell'eseguibile client
+frogger_client: client.o socket.o
+	gcc -w -g $^ -o frogger_client -pthread -lncursesw 
 
 # Regole per la compilazione dei file oggetto
-main.o: main.c librerie.h struct.h thread.h
+main.o: main.c librerie.h
 	gcc -w -g -c main.c -o main.o -pthread
 
-menu.o: menu.c menu.h struct.h librerie.h
+menu.o: menu.c menu.h librerie.h
 	gcc -w -g -c menu.c -o menu.o
 
-crocodile.o: crocodile.c crocodile.h struct.h thread.h librerie.h
+crocodile.o: crocodile.c crocodile.h librerie.h
 	gcc -w -g -c crocodile.c -o crocodile.o
 
-frog.o: frog.c frog.h struct.h thread.h librerie.h
+frog.o: frog.c frog.h librerie.h
 	gcc -w -g -c frog.c -o frog.o
 
-game.o: game.c game.h music.h
+game.o: game.c game.h librerie.h
 	gcc -w -g -c game.c -o game.o
 
-sprite.o: sprite.c sprite.h colors.h crocodile.h librerie.h
+sprite.o: sprite.c sprite.h librerie.h
 	gcc -w -g -c sprite.c -o sprite.o
 
 colors.o: colors.c colors.h librerie.h
 	gcc -w -g -c colors.c -o colors.o
 
-map.o: map.c map.h struct.h sprite.h librerie.h
+map.o: map.c map.h librerie.h
 	gcc -w -g -c map.c -o map.o
 
 thread.o: thread.c thread.h librerie.h
@@ -33,10 +40,16 @@ thread.o: thread.c thread.h librerie.h
 score.o: score.c score.h librerie.h
 	gcc -w -g -c score.c -o score.o
 
-music.o: music.c music.h game.h librerie.h 
+music.o: music.c music.h librerie.h
 	gcc -w -g -c music.c -o music.o
+
+# Nuove regole per i file socket e client
+socket.o: socket.c socket.h struct.h
+	gcc -w -g -c socket.c -o socket.o
+
+client.o: client.c socket.h
+	gcc -w -g -c client.c -o client.o
 
 # Regola per la pulizia dei file
 clean:
-	rm -f *.o frogger
-
+	rm -f *.o frogger_server frogger_client

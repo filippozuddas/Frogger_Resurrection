@@ -32,4 +32,5 @@
 #include "game.h"
 #include "frog.h"
 #include "crocodile.h"
+#include "socket.h"
 

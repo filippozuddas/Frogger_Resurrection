@@ -8,7 +8,7 @@ extern ScoreNode* scoreList;
 
 void initDens(Game *game);
 void initGame(Game *game);
-void runGame(Game* game);
+void runGame(Game* game, int game_socket_fd);
 void stopGame(Game *game);
 
 void printGameOver(WINDOW *win);

@@ -27,7 +27,7 @@ extern int index_read2;
 
 // Function prototypes (Keep them in librerie.h, this is just for clarity.  Having them in both is fine.)
 void writeMain(Informations info);
-Informations readMain();
+bool readMain(Informations* info);
 void writeProd(Informations oggetto);
 Informations readProd();
 

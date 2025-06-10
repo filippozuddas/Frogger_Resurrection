@@ -1,6 +1,12 @@
 #pragma once
 
-#include "librerie.h"
+//#include "librerie.h"
+
+#include <pthread.h>
+#include <ncursesw/ncurses.h>
+#include "globali.h"
+#include <wchar.h>
+
 
 
 typedef struct {
@@ -10,6 +16,7 @@ typedef struct {
     int speed; 
     int ID;   // 0 = frog, 1 = croc
     int active;
+    int grenadesRemaining; 
 } Informations;
 
 typedef struct Crocodile{
@@ -24,7 +31,6 @@ typedef struct Frog {
     int isOnCroc; 
     int onCrocIdx;
     int onCrocOffset; 
-    int grenadesRemaining; 
     pthread_t thread;
 } Frog; 
 

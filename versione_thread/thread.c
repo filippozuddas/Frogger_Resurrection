@@ -34,16 +34,23 @@ void writeMain(Informations info) {
 }
 
 //usata per leggere dal buffer , usata solo dal consumatore che deve identificare da dove arriva il messaggio
-Informations readMain() {
-    Informations info;
-    if (sem_trywait(&sem_occupied) == 0) { 
+bool readMain(Informations* info) {
+    // Tenta di "prendere" un semaforo occupato in modo non bloccante.
+    // Se sem_trywait restituisce 0, significa che c'era un elemento e l'abbiamo preso.
+    if (sem_trywait(&sem_occupied) == 0) {
+        
+        // Se siamo qui, il buffer ha almeno un elemento valido.
         pthread_mutex_lock(&buffer_mutex);
-        info = buffer[index_read];
+        *info = buffer[index_read]; // Copia l'elemento nel puntatore che ci è stato passato
         index_read = (index_read + 1) % DIM_BUFFER;
         pthread_mutex_unlock(&buffer_mutex);
-        sem_post(&sem_free);
-        return info;
+
+        sem_post(&sem_free); // Segnala che si è liberato un posto nel buffer.
+        return true;         // Ritorna 'true' per indicare che la lettura è andata a buon fine.
     }
+
+    // Se sem_trywait non ha restituito 0, significa che il buffer era vuoto.
+    return false; // Ritorna 'false' per indicare che non abbiamo letto nulla.
 }
 
 //usata dal consumatore per scrivere nel buffer condiviso verso i produttori, dal quale frog e croc leggono
