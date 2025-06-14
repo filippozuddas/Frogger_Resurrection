@@ -135,18 +135,25 @@ int isFrogOnCroc(Game *game) {
 }
 
 int isFrogOnRiver(Game *game) {
-    // The frog is in the water if it is on the lines where the crocodiles move
-    if(game->frog.info.y < 9 && isFrogOnDen(game) == 0){
-        return 1;
-    }else{
-        return 0;
+    // La rana è "nell'acqua" solo tra la riga 14 (inizio del fiume) e la riga 51 (fine del fiume)
+    if (game->frog.info.y > 14 && game->frog.info.y < 65) {
+        return 1;  // La rana è nell'acqua
     }
+    return 0;  // La rana non è nell'acqua
 }
+
 int isFrogOnTopBank(Game *game) {
-	if (game->frog.info.y == 5)
-		return 1;
-	else
-		return 0;
+    if (game->frog.info.y >= 9 && game->frog.info.y <= 12) {
+        return 1; 
+    }
+    return 0;
+}
+
+int isFrogOnTopRiver(Game *game) {
+    if (game->frog.info.y < 9 && isFrogOnDen(game) == 0) {
+        return 1; 
+    }
+    return 0; 
 }
 
 int isFrogOnDen(Game *game) {

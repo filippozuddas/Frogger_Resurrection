@@ -1,4 +1,5 @@
 #include "game.h"    
+#include "frog.h"
 
 ScoreNode* scoreList = NULL;
 
@@ -101,6 +102,9 @@ void runGame(Game* game, int game_socket_fd) {
         case 2: countdownTime = 30; break;
         default: countdownTime = 60; break; 
     }
+
+    int millisecondCounter = 0;
+    int timerMax = countdownTime;  // Impostiamo il valore massimo per la barra
     
     while (game->isRunning) {
         
@@ -146,7 +150,75 @@ void runGame(Game* game, int game_socket_fd) {
         // 4. Invia lo stato finale al client e stampa
         sendInfo(game_socket_fd, &frog->info);
 
-        //writeProd(frog->info);
+        if (isFrogOnDen(game)) {
+            frog->score += 100; 
+            frog->info.grenadesRemaining = 10;
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4;
+            frog->info.y = GAME_HEIGHT - 5;
+
+            pthread_mutex_lock(&ncurses_mutex);
+            wrefresh(game->gameWin);
+        
+            // Reset del timer quando la rana raggiunge una tana
+            countdownTime = timerMax;  
+            millisecondCounter = 0;  
+        
+            int allDensClosed = 1; 
+            for (int i = 0; i < N_DENS; i++) {
+                if (game->dens[i].isOpen) {
+                    allDensClosed = 0; 
+                    break;
+                }
+            }
+        
+            if (allDensClosed) {
+                int isDead = 0; 
+                handleScores(game, countdownTime, isDead);
+                werase(game->gameWin);
+                disegna_mappa(game);
+                wrefresh(game->gameWin);
+                stopMusic();
+                game->isRunning = 0; 
+
+                break; 
+            }
+
+            pthread_mutex_unlock(&ncurses_mutex);
+
+            // terminateGrenades(game); 
+            // terminateProjectiles(game);
+        
+            // resetCroc(game); 
+        }
+
+        if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
+            isFrogOnTopRiver(game) ||
+            frog->info.x < 0 || frog->info.x + FROG_WIDTH > GAME_WIDTH) {
+            
+            frog->lives--; 
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+            frog->info.y = GAME_HEIGHT - 5;
+            frog->info.grenadesRemaining = 10;
+            
+            // Reset del timer quando la rana muore
+            countdownTime = timerMax;  
+            millisecondCounter = 0; 
+            
+            if (frog->lives == 0) {
+                stopMusic();
+                int isDead = 1; 
+                handleScores(game, countdownTime, isDead);
+                game->isRunning = 0; 
+
+                break;
+            }
+
+            //terminateGrenades(game);
+            //terminateProjectiles(game);
+            //resetCroc(game); 
+
+            continue;
+        } 
         
         /* ID tra 27 e 46 corrispondono alle granate della rana */
         // else if (info.ID > N_CROC && info.ID < 57){
@@ -193,10 +265,10 @@ void runGame(Game* game, int game_socket_fd) {
         wattron(game->gameWin, A_BOLD); 
         mvwprintw(game->gameWin, 1, 10, "Score: %d", frog->score);
         mvwprintw(game->gameWin, 1, 70, "Grenates remaining: %d", frog->info.grenadesRemaining);
-        mvwprintw(game->gameWin, 3, 10, "info.ID = %d", info.ID); 
-        mvwprintw(game->gameWin, 3, 50, "playerCrocID = %d", playerCrocID);
-        mvwprintw(game->gameWin, 3, 70, "frog->isOnCroc = %d", frog->isOnCroc);
         wattroff(game->gameWin, A_BOLD);
+
+        drawLives(game->gameWin, frog->lives);     
+
         for (int i = 0; i < N_CROC; i++) {
             if (croc[i].info.active) {
                 printCroc(game->gameWin, croc[i].info.x, croc[i].info.y, croc[i].info.direction);
@@ -207,7 +279,7 @@ void runGame(Game* game, int game_socket_fd) {
         wrefresh(game->gameWin);
         pthread_mutex_unlock(&ncurses_mutex);
         
-        usleep(2000);
+        usleep(1000);
     }
 }
    
@@ -373,7 +445,6 @@ void stopGame(Game *game) {
         // Calcola la posizione centrale per i cuori
         int heartsWidth = lives * 2;  // Ogni cuore occupa 2 spazi
         int startX = (GAME_WIDTH - heartsWidth) / 2;
-        pthread_mutex_lock(&ncurses_mutex);
         // Posiziona i cuori sopra la barra del tempo
         wmove(win, 1, startX);
         wattron(win, COLOR_PAIR(RED_HEARTS));  // Usa il colore rosso per i cuori
@@ -383,7 +454,6 @@ void stopGame(Game *game) {
         }
         
         wattroff(win, COLOR_PAIR(RED_HEARTS));
-        pthread_mutex_unlock(&ncurses_mutex);
     }
     
     void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax) {

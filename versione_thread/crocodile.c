@@ -44,18 +44,6 @@ void createCroc(Game *game) {
                 validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
             }
 
-            /* DA LASCIARE COMMENTATO ALTRIMENTI STAMPA UN COCCODRILLO IN PIù*/
-            // do {
-            //     spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
-            //     validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
-            //     attempts++; 
-
-            //     if (attempts > 100) { // Limite di tentativi aumentato
-            //         fprintf(stderr, "Impossibile trovare una posizione valida per il coccodrillo %d\n", crocID);
-            //         // Invece di uscire, riduci il numero di coccodrilli per questo flusso
-            //         break;
-            //     }
-            // } while (!validPosition);
 
             if (validPosition) {
                 // Inizializzazione delle informazioni del coccodrillo PRIMA di creare il thread

@@ -278,13 +278,6 @@ void runGame(Game* game, int game_socket_fd) {
         playerCrocID = isFrogOnCroc(game);
         sendInfo(game_socket_fd, &frog->info);
 
-        /* 
-         * Attraverso una pipe inversa (dal padre al processo rana) comunico le nuove coordinate
-         * alla rana, nel caso in cui sia sopra un coccodrillo  
-         */
-        flushPipe(game->mainToFrogPipe[1]);
-        writeData(game->mainToFrogPipe[1], &frog->info, sizeof(Informations));
-
         /* Verifico se la rana è su una tana */
         if (isFrogOnDen(game)) {
             frog->score += 100; 
