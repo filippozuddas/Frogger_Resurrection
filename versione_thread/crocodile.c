@@ -8,6 +8,25 @@ int MAX_V;
 
 static pthread_t crocThreads[N_CROC];
 
+/*
+ * isPositionValid controlla se la nuova x è sufficientemente distante
+ * da altri coccodrilli “già posizionati” sulla stessa riga (usato dal processo padre).
+ */
+static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
+    for (int i = 0; i < count; i++) {
+        // Se hanno la stessa riga
+        if (crocodiles[i].info.y == y_new) {
+            // Calcola distanza in base a x
+            int diff = abs(crocodiles[i].info.x - x_new); 
+            // Se si sovrappongono o sono troppo vicini
+            if (diff < (CROC_LENGHT + MIN_CROC_DISTANCE)) {
+                return 0; // posizione non valida
+            }
+        }
+    }
+    return 1; // posizione valida
+}
+
 void createCroc(Game *game) {
     switch (game->difficulty) {
         case 2: MIN_V = 3; MAX_V = 5; break;
@@ -181,10 +200,27 @@ void killCroc(Game *game) {
     }
 }
 
+void createProjectile(Game *game, Crocodile *croc, int projectileID, int projectileIndex) {
+
+    //pthread_mutex_lock(&projectile_mutex); // LOCK - Protect projectile array
+
+    Projectile *projectile = &game->projectiles[projectileIndex];
+
+    projectile->info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x;
+    projectile->info.y = croc->info.y + 2; // +1 o -1?  Depends on your coordinate system
+    projectile->info.direction = croc->info.direction;
+    projectile->info.speed = 2;
+    projectile->info.ID = projectileID;  // Unique ID (important!)
+    projectile->info.active = 1;
+    //pthread_mutex_unlock(&projectile_mutex); // UNLOCK
+
+    pthread_create(&projectile->thread, NULL, moveProjectile, (void *)projectile);
+}
+
 void* moveProjectile(void* arg) {
     Projectile* projectile = (Projectile*)arg;
 
-    pthread_mutex_lock(&projectile_mutex);
+    //pthread_mutex_lock(&projectile_mutex);
     while (projectile->info.active) {
         if (projectile->info.direction == 0) {
             projectile->info.x++;
@@ -203,41 +239,10 @@ void* moveProjectile(void* arg) {
         usleep(projectile->info.speed * 10000); // Adjust speed as needed
     }
     projectile->info.active = 0; // Ensure it's marked as inactive on exit
+    projectile->info.ID = -1; 
 
-    pthread_mutex_lock(&projectile_mutex);
+    //pthread_mutex_lock(&projectile_mutex);
     pthread_exit(NULL);
-}
-
-void createProjectile(Game *game, Crocodile *croc, int projectileID, int projectileIndex) {
-
-    pthread_mutex_lock(&projectile_mutex); // LOCK - Protect projectile array
-
-    Projectile *projectile = &game->projectiles[projectileIndex];
-
-    projectile->info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x - 1;
-    projectile->info.y = croc->info.y; // +1 o -1?  Depends on your coordinate system
-    projectile->info.direction = croc->info.direction;
-    projectile->info.speed = 2;
-    projectile->info.ID = projectileID;  // Unique ID (important!)
-    projectile->info.active = 1;
-    pthread_mutex_unlock(&projectile_mutex); // UNLOCK
-
-    pthread_create(&projectile->thread, NULL, moveProjectile, (void *)projectile);
-}
-
-void terminateProjectiles(Game *game) {
-
-    pthread_mutex_lock(&projectile_mutex); // UNLOCK
-    
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (game->projectiles[i].info.active) {
-            pthread_cancel(game->projectiles[i].thread); // Cancel the thread
-            pthread_join(game->projectiles[i].thread, NULL);   // Wait for it to finish
-            game->projectiles[i].info.active = 0;       // Mark as inactive
-            game->projectiles[i].info.ID = -1;         // Reset ID
-        }
-    }
-    pthread_mutex_unlock(&projectile_mutex); // UNLOCK
 }
 
 void handleProjectileGeneration(Game *game) {
@@ -274,25 +279,24 @@ void handleProjectileGeneration(Game *game) {
                 int projectileID = nextProjectileID++;
 
 
-                createProjectile(game, game->crocodile, projectileID, projectileIndex);
+                createProjectile(game, &game->crocodile[selectedCroc], projectileID, projectileIndex);
                 lastShotTime = currentTime;
             }
         }
     }
 }
 
+void terminateProjectiles(Game *game) {
 
-int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
-    for (int i = 0; i < count; i++) {
-        if (crocodiles[i].info.y == y_new) {
-            // Calcola la distanza tra i bordi dei coccodrilli (non i centri)
-            int diff = abs(crocodiles[i].info.x - x_new);
-
-            // Verifica la sovrapposizione o la distanza minima tra i bordi
-            if (diff < CROC_LENGHT + MIN_CROC_DISTANCE) {
-                return false; // Posizione non valida
-            }
+    //pthread_mutex_lock(&projectile_mutex); // UNLOCK
+    
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        if (game->projectiles[i].info.active) {
+            pthread_cancel(game->projectiles[i].thread); // Cancel the thread
+            pthread_join(game->projectiles[i].thread, NULL);   // Wait for it to finish
+            game->projectiles[i].info.active = 0;       // Mark as inactive
+            game->projectiles[i].info.ID = -1;         // Reset ID
         }
     }
-    return true; // Posizione valida
+    //pthread_mutex_unlock(&projectile_mutex); // UNLOCK
 }

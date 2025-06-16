@@ -128,6 +128,50 @@ void runGame(Game* game, int game_socket_fd) {
             if (info.ID >= 1 && info.ID <= N_CROC) {
                 croc[info.ID - 1].info = info;
             }
+
+            else if (info.ID > 56) {
+                for (int i = 0; i < MAX_PROJECTILES; i++) {
+                    if (projectiles[i].info.ID == info.ID) {
+                        projectiles[i].info = info;
+                        break;
+                    }
+                }
+            }
+        }
+
+        handleProjectileGeneration(game);
+
+        /* Rilevamento collisione Rana-proiettile */
+        for (int i = 0; i < MAX_PROJECTILES; i++) {
+            if (projectiles[i].info.active) {
+                if (checkCollisionProjectile(frog->info, projectiles[i])) {
+                    frog->lives--;
+                    frog->info.x = ((GAME_WIDTH - 1) / 2) - 4;
+                    frog->info.y = GAME_HEIGHT - 5;
+                    frog->info.grenadesRemaining = 10;
+                    
+                    // Reset del timer quando la rana muore
+                    countdownTime = timerMax;  
+                    millisecondCounter = 0; 
+                    
+                    if (frog->lives == 0) {
+                        stopMusic();
+                        int isDead = 1;
+                        handleScores(game, countdownTime, isDead);
+                        game->isRunning = 0; 
+
+                        break;
+                    }
+
+                    projectiles->info.active = 0;
+                    
+                    //terminateGrenades(game);
+                    terminateProjectiles(game);
+                    //resetCroc(game);
+
+                    continue;
+                }
+            }
         }
 
         // 3. Applica la logica di gioco
@@ -186,7 +230,7 @@ void runGame(Game* game, int game_socket_fd) {
             pthread_mutex_unlock(&ncurses_mutex);
 
             // terminateGrenades(game); 
-            // terminateProjectiles(game);
+            terminateProjectiles(game);
         
             // resetCroc(game); 
         }
@@ -214,7 +258,7 @@ void runGame(Game* game, int game_socket_fd) {
             }
 
             //terminateGrenades(game);
-            //terminateProjectiles(game);
+            terminateProjectiles(game);
             //resetCroc(game); 
 
             continue;
@@ -276,10 +320,11 @@ void runGame(Game* game, int game_socket_fd) {
         }
         
         printFrog(game, game->gameWin, frog->info.x, frog->info.y);
+        printProjectiles(game);
         wrefresh(game->gameWin);
         pthread_mutex_unlock(&ncurses_mutex);
         
-        usleep(1000);
+        usleep(10000);
     }
 }
    
