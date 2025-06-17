@@ -9,39 +9,51 @@ void createFrog(Game *game) {
     game->frog.info.x = ((GAME_WIDTH - 1) / 2) - 4;
     game->frog.info.y = GAME_HEIGHT - 5;
     game->frog.info.ID = 0;
-    game->frog.info.grenadesRemaining = 5;
+    game->frog.info.grenadesRemaining = 20;
     game->frog.lives = 3;
     game->frog.score = 0;
     game->frog.isOnCroc = 0;    
 }
     
-void createGrenade(Game *game, int direction){
+void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex){
 
-    Grenade* grenade = malloc(sizeof(Grenade));
+    // Grenade* grenade = malloc(sizeof(Grenade));
 
-    int grenadeID, grenadeIndex = findFreeGrenadeSlot(game);
+    // int grenadeID, grenadeIndex = findFreeGrenadeSlot(game);
 
-    grenadeID++;
+    // grenadeID++;
 
-    if (grenadeIndex >= 0) {
+    // if (grenadeIndex >= 0) {
         
-        pthread_mutex_lock(&granades_mutex);
-        game->grenades[grenadeIndex].info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH : game->frog.info.x - 1;
-        game->grenades[grenadeIndex].info.y = game->frog.info.y;
-        game->grenades[grenadeIndex].info.direction = direction;
-        game->grenades[grenadeIndex].info.speed = 3; // Example speed
-        game->grenades[grenadeIndex].info.ID = grenadeID; // Use provided ID
-        game->grenades[grenadeIndex].info.active = 1;      // Mark as active
+    //     pthread_mutex_lock(&granades_mutex);
+    //     game->grenades[grenadeIndex].info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH : game->frog.info.x - 1;
+    //     game->grenades[grenadeIndex].info.y = game->frog.info.y;
+    //     game->grenades[grenadeIndex].info.direction = direction;
+    //     game->grenades[grenadeIndex].info.speed = 3; // Example speed
+    //     game->grenades[grenadeIndex].info.ID = grenadeID; // Use provided ID
+    //     game->grenades[grenadeIndex].info.active = 1;      // Mark as active
         
-        pthread_mutex_unlock(&granades_mutex);
-        pthread_create(&game->grenades[grenadeIndex].thread, NULL, (void  *)moveGrenade, (void *)game->grenades); 
-    }
+    //     pthread_mutex_unlock(&granades_mutex);
+    //     pthread_create(&game->grenades[grenadeIndex].thread, NULL, (void  *)moveGrenade, (void *)game->grenades); 
+    // }
+
+    Grenade *grenade = &game->grenades[grenadeIndex];
+
+    grenade->info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH - 1 : game->frog.info.x - 1; 
+    grenade->info.y = game->frog.info.y + 2; 
+    grenade->info.direction = direction; 
+    grenade->info.speed = 3; 
+    grenade->info.ID = grenadeId; 
+    grenade->info.active = 1;
+
+    pthread_create(&grenade->thread, NULL, moveGrenade, (void*)grenade);
+
 }
 
 void moveGrenade(void * params) {
     Grenade *grenade = (Grenade *)params;
 
-    pthread_mutex_lock(&granades_mutex);
+    //pthread_mutex_lock(&granades_mutex);
     while(grenade->info.active) {
         if (grenade->info.direction == 1) {
             grenade->info.x++;
@@ -56,11 +68,14 @@ void moveGrenade(void * params) {
             }
         }
 
-    pthread_mutex_unlock(&granades_mutex);
+    //pthread_mutex_unlock(&granades_mutex);
     writeMain(grenade->info); // Send updated position
     usleep(grenade->info.speed * 10000);  // Adjust delay for spee
-}
-    free(grenade); // Free grenade memory after thread completes    
+    }
+
+    //free(grenade); // Free grenade memory after thread completes    
+    grenade->info.active = 0; 
+    grenade->info.ID = -1;
     pthread_exit(0);
 }
 

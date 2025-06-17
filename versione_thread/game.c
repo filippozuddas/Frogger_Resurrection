@@ -122,11 +122,45 @@ void runGame(Game* game, int game_socket_fd) {
             if (socketInfo.ID == 0) {
                 frog->info = socketInfo;
             }
+            else if (socketInfo.ID == -1 || socketInfo.ID == -2) {
+                if (frog->info.grenadesRemaining > 0) {
+                    writeMain(socketInfo);
+                    frog->info.grenadesRemaining--;
+                }
+            }
         }
         // Svuota il buffer per evitare lag dei coccodrilli
         while (readMain(&info)) {
             if (info.ID >= 1 && info.ID <= N_CROC) {
                 croc[info.ID - 1].info = info;
+            }
+
+            /* ID -1 e -2 usati come flag per creare le granate, rispettivamente destra e sinistra */
+            else if (info.ID == -1 || info.ID == -2) {
+                int direction = (info.ID == -1) ? 1 : -1; 
+                int grenadeIndex = -1; 
+
+                /* Trovo uno slot dell'array libero */
+                for (int i = 0; i < MAX_GRENADES; i++) {
+                    if (!grenades[i].info.active) {
+                        grenadeIndex = i; 
+                        break;
+                    }
+                }
+
+                if (grenadeIndex != -1) {
+                    createGrenade(game, direction, grenadeID++, grenadeIndex); 
+                }
+            }
+
+            /* ID tra 26 e 56 corrispondono alle granate della rana */
+            else if (info.ID > N_CROC && info.ID <= 56){
+                for (int i = 0; i < MAX_GRENADES; i++) {
+                    if (grenades[i].info.ID == info.ID) {
+                        grenades[i].info = info;
+                        break;
+                    }
+                }
             }
 
             else if (info.ID > 56) {
@@ -301,8 +335,8 @@ void runGame(Game* game, int game_socket_fd) {
         // pthread_mutex_unlock(&ncurses_mutex);
         /* AGGIUNGERE CONTROLLI E COLLISIONI !!!!!!!!!!!!!!! */
         
-        
-        pthread_mutex_lock(&ncurses_mutex);
+        // FUNZIONA ANCHE SENZA ncurses_mutex
+        //pthread_mutex_lock(&ncurses_mutex);
         werase(game->gameWin);
         disegna_mappa(game);
         
@@ -320,9 +354,10 @@ void runGame(Game* game, int game_socket_fd) {
         }
         
         printFrog(game, game->gameWin, frog->info.x, frog->info.y);
+        printGrenades(game);
         printProjectiles(game);
         wrefresh(game->gameWin);
-        pthread_mutex_unlock(&ncurses_mutex);
+        //pthread_mutex_unlock(&ncurses_mutex);
         
         usleep(10000);
     }

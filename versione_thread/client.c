@@ -69,7 +69,6 @@ static void runInputClient(int client_socket_fd) {
                 has_input = false;
                 break;
         }
-        flushinp();
 
         if (has_input) {
             new_msg.ID = 0;

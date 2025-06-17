@@ -5,7 +5,7 @@
 
 void createFrog(Game *game);
 void *inputHandler(void* params);
-void createGrenade(Game *game, int direction);
+void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex);
 void moveGrenade(void * params);
 void terminateGrenades(Game *game);
 int findFreeGrenadeSlot(Game *game);
