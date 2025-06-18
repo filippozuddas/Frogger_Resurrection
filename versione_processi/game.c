@@ -417,6 +417,7 @@ void stopGame(Game *game) {
         close(game->crocodile[i].mainToCrocPipe[1]);
     }
 
+    flushinp();
     werase(game->gameWin); 
     if (game->frog.lives == 0){
         printGameOver(game->gameWin);
