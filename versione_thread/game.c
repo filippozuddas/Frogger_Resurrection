@@ -75,11 +75,8 @@ void initGame(Game *game) {
 
 void runGame(Game* game, int game_socket_fd) {
     
-    //printf("runGame: isRunning = %d\n", game->isRunning); // Verifica il valore di isRunning
-
     createCroc(game);  // Create crocodile threads
     createFrog(game);  // Create frog thread
-    //createTimer(game);
 
     
     Frog *frog = &game->frog;
@@ -108,8 +105,36 @@ void runGame(Game* game, int game_socket_fd) {
     
     while (game->isRunning) {
         
-        //usleep(6000);  // Controllo del timer ogni 6 millisecondi
+        usleep(6000);  // Controllo del timer ogni 6 millisecondi
         
+        countdownTime = timerHandler(game, &millisecondCounter, countdownTime, timerMax); 
+
+        if (countdownTime <= 0) {
+            frog->lives--; 
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+            frog->info.y = GAME_HEIGHT - 5;
+            frog->info.grenadesRemaining = 10;
+            
+            // Reset del timer quando la rana muore
+            countdownTime = timerMax;  
+            millisecondCounter = 0; 
+            
+            if (frog->lives == 0) {
+                stopMusic();
+                int isDead = 1; 
+                handleScores(game, countdownTime, isDead);
+                game->isRunning = 0; 
+
+                break;
+            }
+
+            terminateGrenades(game);
+            terminateProjectiles(game);
+            resetCroc(game); 
+
+            continue;
+        }
+
         
         //------------------------- LETTURA DA MAIN BUFFER PER IDENTIFICARE OGGETTO ----------------------------------
         
@@ -199,11 +224,34 @@ void runGame(Game* game, int game_socket_fd) {
 
                     projectiles->info.active = 0;
                     
-                    //terminateGrenades(game);
+                    terminateGrenades(game);
                     terminateProjectiles(game);
-                    //resetCroc(game);
+                    killCroc(game);
+                    createCroc(game);
 
                     continue;
+                }
+            }
+        }
+
+        /* Rilevamento collisione granata-proiettile */
+        for (int i = 0; i < MAX_GRENADES; i++) {
+            if (grenades[i].info.active == 1) { // Se la granata è attiva
+                for (int j = 0; j < MAX_PROJECTILES; j++) {
+                    if (projectiles[j].info.active == 1) { // Se il proiettile è attivo
+                        if (checkCollisionProjectile(grenades[i].info, projectiles[j])) {
+                            // Collisione!
+                        
+                            pthread_cancel(game->grenades[i].thread);
+                            pthread_join(game->grenades[i].thread, NULL);
+                            grenades[i].info.active = 0;          // Libera lo slot granata
+
+                            pthread_cancel(game->projectiles[j].thread);
+                            pthread_join(game->projectiles[j].thread, NULL);
+                            projectiles[j].info.active = 0;        // Libera lo slot proiettile
+                            break; 
+                        }
+                    }
                 }
             }
         }
@@ -263,10 +311,14 @@ void runGame(Game* game, int game_socket_fd) {
 
             pthread_mutex_unlock(&ncurses_mutex);
 
-            // terminateGrenades(game); 
+            terminateGrenades(game);
             terminateProjectiles(game);
-        
-            // resetCroc(game); 
+            killCroc(game);
+            createCroc(game);
+
+            for (int i = 0; i < N_CROC; i++) {
+                game->crocodile[i].info.active = 0;
+            }   
         }
 
         if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
@@ -291,52 +343,14 @@ void runGame(Game* game, int game_socket_fd) {
                 break;
             }
 
-            //terminateGrenades(game);
+            terminateGrenades(game);
             terminateProjectiles(game);
-            //resetCroc(game); 
+            killCroc(game);
+            createCroc(game);
 
             continue;
         } 
         
-        /* ID tra 27 e 46 corrispondono alle granate della rana */
-        // else if (info.ID > N_CROC && info.ID < 57){
-            //    for (int i = 0; i < MAX_GRENADES; i++) {
-                //        if (grenades[i].info.ID == info.ID) {
-                    //            // grenades[i].info.x = info.x; //Aggiorno solo x e y
-        //            // grenades[i].info.y = info.y;
-        //            grenades[i].info = info;
-        //            //fprintf(stderr, "[PADRE] Ricevuto granata - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, grenades[i].info.pid); // DEBUG
-        //            break;
-        //        }
-        //    }
-        // }
-        
-        //pthread_mutex_unlock(&buffer_mutex);
-        //writeProd(frog->info);
-        // /* ID -1 e -2 usati come flag per creare le granate, rispettivamente destra e sinistra */
-        // else if (info.ID == -1 || info.ID == -2) {
-        //    int direction = (info.ID == -1) ? 1 : -1;
-        //    //createGrenade(game, direction); 
-        // }
-        // else if (info.ID > 56) {
-        //    int foundProjectile = 0;
-        //    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        //        if (projectiles[i].info.ID == info.ID) {
-        //            // projectiles[i].info.x = info.x;
-        //            // projectiles[i].info.y = info.y;
-        //            projectiles[i].info = info;
-        //            //fprintf(stderr, "[PADRE] Ricevuto proiettile - ID: %d, X: %d, Y: %d, PID: %d\n", info.ID, info.x, info.y, projectiles[i].info.pid); // DEBUG
-        //            foundProjectile = 1;
-        //            break;
-            
-        //        }
-        //    }
-        // }
-        // pthread_mutex_unlock(&ncurses_mutex);
-        /* AGGIUNGERE CONTROLLI E COLLISIONI !!!!!!!!!!!!!!! */
-        
-        // FUNZIONA ANCHE SENZA ncurses_mutex
-        //pthread_mutex_lock(&ncurses_mutex);
         werase(game->gameWin);
         disegna_mappa(game);
         
@@ -346,6 +360,7 @@ void runGame(Game* game, int game_socket_fd) {
         wattroff(game->gameWin, A_BOLD);
 
         drawLives(game->gameWin, frog->lives);     
+        drawTimer(game, game->gameWin, countdownTime, timerMax);
 
         for (int i = 0; i < N_CROC; i++) {
             if (croc[i].info.active) {
@@ -357,17 +372,11 @@ void runGame(Game* game, int game_socket_fd) {
         printGrenades(game);
         printProjectiles(game);
         wrefresh(game->gameWin);
-        //pthread_mutex_unlock(&ncurses_mutex);
         
         usleep(10000);
     }
 }
-   
-
-
-
-
-    
+       
 void stopGame(Game *game) {
         // Terminate all active threads (projectiles, grenades, crocodiles)
         for(int i = 0; i < MAX_PROJECTILES; i++) {
@@ -382,236 +391,132 @@ void stopGame(Game *game) {
                 pthread_join(game->grenades[i].thread, NULL);
             }
         }
+
+
         for(int i = 0; i < N_CROC; i++) {
             if(game->crocodile[i].info.ID != -1){
                  pthread_cancel(game->crocodile[i].thread);
                 pthread_join(game->crocodile[i].thread, NULL);
             }
         }
-      
-        deallocate_synchro();
-        
+    
+        werase(game->gameWin); 
+
+	if (game->frog.lives == 0 || timerHandler(&game, NULL, 0, 0) <= 0) {
+        printGameOver(game->gameWin);
+        startMusic("../music/GAMEOVER.wav");
+    }
+    else {
+        printYouWon(game->gameWin); 
+        startMusic("../music/YOUWIN.wav");
+    } 
+
+    digitsAnalyser(game->gameWin, game->frog.score, GAME_HEIGHT/2, GAME_WIDTH/2);
+
+    wattron(game->gameWin, A_BOLD);
+    mvwprintw(game->gameWin, GAME_HEIGHT - 25, (GAME_WIDTH / 2) - 22, "PREMI UN TASTO PER TORNARE AL MENU PRINCIPALE");
+    wattroff(game->gameWin, A_BOLD); 
+    wrefresh(game->gameWin); 
+    int ch; 
+    while((ch = wgetch(game->gameWin)) == ERR); 
+
+      stopMusic();
+    deallocate_synchro();
+	
+    delwin(game->gameWin);
 }
     
     
-    void printGameOver(WINDOW *win) {
-        const wchar_t *pattern[] = {
-            L" ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓██████████████▓▒░░▒▓████████▓▒░       ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░  ",
-            L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ",
-            L"░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ",
-            L"░▒▓█▓▒▒▓███▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░        ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒▒▓█▓▒░░▒▓██████▓▒░ ░▒▓███████▓▒░  ",
-            L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ",
-            L" ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░       ░▒▓██████▓▒░   ░▒▓██▓▒░  ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░ "
-        };
-        pthread_mutex_lock(&ncurses_mutex);
-        wattron(win, COLOR_PAIR(RED_HEARTS));
-        for (int i = 0; i < 6; i++) {
-            mvwaddwstr(win, i+20, (GAME_WIDTH - 121) / 2, pattern[i]);  // Spostato in basso
-        }
-        wattroff(win, COLOR_PAIR(RED_HEARTS));
-        pthread_mutex_unlock(&ncurses_mutex);
+void printGameOver(WINDOW *win) {
+    const wchar_t *pattern[] = {
+        L" ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓██████████████▓▒░░▒▓████████▓▒░       ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░  ",
+        L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ",
+        L"░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ",
+        L"░▒▓█▓▒▒▓███▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░        ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒▒▓█▓▒░░▒▓██████▓▒░ ░▒▓███████▓▒░  ",
+        L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ",
+        L" ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░       ░▒▓██████▓▒░   ░▒▓██▓▒░  ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░ "
+    };
+    pthread_mutex_lock(&ncurses_mutex);
+    wattron(win, COLOR_PAIR(RED_HEARTS));
+    for (int i = 0; i < 6; i++) {
+        mvwaddwstr(win, i+20, (GAME_WIDTH - 121) / 2, pattern[i]);  // Spostato in basso
     }
-    
-    
-    void printYouWon(WINDOW *win){
-        const wchar_t *pattern[] = {
-            L"░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░",
-            L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░",
-            L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░",
-            L" ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░",
-            L"   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ",
-            L"   ░▒▓█▓▒░    ░▒▓██████▓▒░ ░▒▓██████▓▒░        ░▒▓█████████████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░ "
-     };
-    
-        pthread_mutex_lock(&ncurses_mutex);
-        wattron(win, COLOR_PAIR(RED_HEARTS));
-        for (int i = 0; i < 3; i++) {
-            mvwaddwstr(win, i+20, (GAME_WIDTH - 93) / 2, pattern[i]);  // Spostato più in basso
-        }
-        wattroff(win, COLOR_PAIR(RED_HEARTS));
-        pthread_mutex_unlock(&ncurses_mutex);
-    }
-    
-    void restartMenu(Game *game, int score, int flag) {
-    
-        pthread_mutex_lock(&ncurses_mutex);
-        init_pair(1, COLOR_RED, COLOR_BLACK);
-        werase(game->gameWin);
-        wrefresh(game->gameWin);
-        pthread_mutex_unlock(&ncurses_mutex);
-        usleep(10000);
-        
-        int highlight = 1;
-        int choice = 0;
-        int c;
-        
-        // Stampa GAME OVER o YOU WON
-        if (flag == 0) {
-            printGameOver(game->gameWin);
-        } else if (flag == 1) {
-            printYouWon(game->gameWin);
-        }
-    
-        // Calcola le posizioni per centrare il punteggio
-        int centerX = 72;
-        int scoreY = GAME_HEIGHT - 22;  // Posizione Y dello score
-        int n_choices = sizeof(restart) / sizeof(MenuOption);
-    
-        // Stampa il punteggio grande
-        digitsAnalyser(game->gameWin, score, scoreY, centerX);
-        
-        pthread_mutex_lock(&ncurses_mutex);
-        // Verifica e aggiorna il display
-        wrefresh(game->gameWin);
-        pthread_mutex_unlock(&ncurses_mutex);
-    
-        addScore(&scoreList, game->frog.score);
-        
-        // Setup menu
-        pthread_mutex_lock(&ncurses_mutex);
-        keypad(game->gameWin, TRUE);
-        
-        print_menu(game->gameWin, highlight, restart, n_choices);
-        wrefresh(game->gameWin);
-        pthread_mutex_unlock(&ncurses_mutex);
-    
-        // Loop del menu
-        pthread_mutex_lock(&ncurses_mutex);
-        while ((c = wgetch(game->gameWin)) != 0) {
-            pthread_mutex_unlock(&ncurses_mutex);
-            switch (c) {
-                case KEY_UP:
-                    highlight = (highlight == 1) ? n_choices : highlight - 1;
-                    break;
-                case KEY_DOWN:
-                    highlight = (highlight == n_choices) ? 1 : highlight + 1;
-                    break;
-                case 10:  // Invio
-                    choice = highlight;
-                    break;
-                    // if (choice == 1) {
-                    //     pthread_mutex_lock(&ncurses_mutex);
-                    //     wclear(game->gameWin);
-                    //     wrefresh(game->gameWin);
-                    //     pthread_mutex_unlock(&ncurses_mutex);
-                    //     initGame(game);
-                    //     runGame(game, game_socket_fd);
-                    //     stopGame(game);
-                    //     return;
-                    // } else if (choice == 2) {
-                    //     pthread_mutex_lock(&ncurses_mutex);
-                    //     wclear(game->gameWin);
-                    //     wrefresh(game->gameWin);
-                    //     pthread_mutex_unlock(&ncurses_mutex);
-                    //     mainMenu(game);
-                    //     return;
-                    // }
-                default:
-                    break;
-            }
-            pthread_mutex_lock(&ncurses_mutex);
-            print_menu(game->gameWin, highlight, restart, n_choices);
-            wrefresh(game->gameWin);
-            pthread_mutex_unlock(&ncurses_mutex);
-            if (choice != 0)
-                break;
-        }
-    }
-    
-    
-    
-    
-    void drawLives(WINDOW *win, int lives) {
-        // Calcola la posizione centrale per i cuori
-        int heartsWidth = lives * 2;  // Ogni cuore occupa 2 spazi
-        int startX = (GAME_WIDTH - heartsWidth) / 2;
-        // Posiziona i cuori sopra la barra del tempo
-        wmove(win, 1, startX);
-        wattron(win, COLOR_PAIR(RED_HEARTS));  // Usa il colore rosso per i cuori
-        
-        for (int i = 0; i < lives; i++) {
-            wprintw(win, "♥ ");  // Stampa un cuore con uno spazio
-        }
-        
-        wattroff(win, COLOR_PAIR(RED_HEARTS));
-    }
-    
-    void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax) {
-        int progressBarWidth = GAME_WIDTH - 9;  // Larghezza della barra
-        int filledBlocks = (timeLeft * progressBarWidth) / timerMax;  // Blocchi pieni in base al tempo rimanente
-        int remainingBlocks = progressBarWidth - filledBlocks;  // Blocchi vuoti
-    
-        pthread_mutex_lock(&ncurses_mutex);
-        // Posizioniamo il cursore per disegnare la barra
-        wmove(win, 3, 5);
-        wprintw(win, "[");
-        
-        // Disegniamo i blocchi pieni (verde) che rappresentano il tempo che è passato
-        wattron(win, COLOR_PAIR(GREEN_BLACK));  
-        for (int i = 0; i < filledBlocks; i++) {
-            wprintw(win, "█");
-        }
-        wattroff(win, COLOR_PAIR(GREEN_BLACK));  
-        
-        // Disegniamo i blocchi vuoti (rosso) che rappresentano il tempo rimanente
-        wattron(win, COLOR_PAIR(COLOR_RED));  
-        for (int i = 0; i < remainingBlocks; i++) {
-            wprintw(win, "░");
-        }
-        wattroff(win, COLOR_PAIR(COLOR_RED));  
-        
-        wprintw(win, "]");
-        pthread_mutex_unlock(&ncurses_mutex);    
-    }
-    
-
-void* timerThread(void* arg) {
-
-
-    Game* game = (Game*)arg;
-    int countdownTime = game->difficulty == 0 ? 60 : (game->difficulty == 1 ? 45 : 30);
-    int timerMax = countdownTime;
-    int millisecondCounter = 0;
-
-    while (game->isRunning) {
-        usleep(5000);
-        millisecondCounter += 5;
-
-        if (millisecondCounter >= 1000) {
-            millisecondCounter = 0;
-
-            // Blocca il mutex prima di accedere a game->isRunning
-            pthread_mutex_lock(&buffer_mutex);
-
-            countdownTime--;
-            if (countdownTime <= 0) {
-                countdownTime = 0;
-                game->isRunning = 0;
-                
-                // Sblocca il mutex prima di uscire
-                pthread_mutex_unlock(&buffer_mutex); 
-                pthread_exit(NULL);
-            }
-
-            // Sblocca il mutex dopo l'accesso
-            pthread_mutex_unlock(&buffer_mutex); 
-        }
-
-        pthread_mutex_lock(&buffer_mutex);
-        game->timer.countdownTime = countdownTime;
-        game->timer.millisecondCounter = millisecondCounter;
-        game->timer.timerMax = timerMax;
-        pthread_mutex_unlock(&buffer_mutex);
-    }
-
-    pthread_exit(NULL);
+    wattroff(win, COLOR_PAIR(RED_HEARTS));
+    pthread_mutex_unlock(&ncurses_mutex);
 }
 
-void createTimer(Game* game) {
 
-    int result = pthread_create(&game->timer.thread, NULL, timerThread, (void*)game);
-    if (result != 0) {
-        perror("Errore in pthread_create() in createTimer()");
+void printYouWon(WINDOW *win){
+    const wchar_t *pattern[] = {
+        L"░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░",
+        L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░",
+        L"░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░",
+        L" ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░",
+        L"   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ",
+        L"   ░▒▓█▓▒░    ░▒▓██████▓▒░ ░▒▓██████▓▒░        ░▒▓█████████████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░ "
+ };
+
+    pthread_mutex_lock(&ncurses_mutex);
+    wattron(win, COLOR_PAIR(RED_HEARTS));
+    for (int i = 0; i < 3; i++) {
+        mvwaddwstr(win, i+20, (GAME_WIDTH - 93) / 2, pattern[i]);  // Spostato più in basso
     }
-
+    wattroff(win, COLOR_PAIR(RED_HEARTS));
+    pthread_mutex_unlock(&ncurses_mutex);
 }
+
+
+void drawLives(WINDOW *win, int lives) {
+    // Calcola la posizione centrale per i cuori
+    int heartsWidth = lives * 2;  // Ogni cuore occupa 2 spazi
+    int startX = (GAME_WIDTH - heartsWidth) / 2;
+    // Posiziona i cuori sopra la barra del tempo
+    wmove(win, 1, startX);
+    wattron(win, COLOR_PAIR(RED_HEARTS));  // Usa il colore rosso per i cuori
+    
+    for (int i = 0; i < lives; i++) {
+        wprintw(win, "♥ ");  // Stampa un cuore con uno spazio
+    }
+    
+    wattroff(win, COLOR_PAIR(RED_HEARTS));
+}
+    
+void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax) {
+    int progressBarWidth = GAME_WIDTH - 9;  // Larghezza della barra
+    int filledBlocks = (timeLeft * progressBarWidth) / timerMax;  // Blocchi pieni in base al tempo rimanente
+    int remainingBlocks = progressBarWidth - filledBlocks;  // Blocchi vuoti
+
+    pthread_mutex_lock(&ncurses_mutex);
+    // Posizioniamo il cursore per disegnare la barra
+    wmove(win, 3, 5);
+    wprintw(win, "[");
+    
+    // Disegniamo i blocchi pieni (verde) che rappresentano il tempo che è passato
+    wattron(win, COLOR_PAIR(GREEN_BLACK));  
+    for (int i = 0; i < filledBlocks; i++) {
+        wprintw(win, "█");
+    }
+    wattroff(win, COLOR_PAIR(GREEN_BLACK));  
+    
+    // Disegniamo i blocchi vuoti (rosso) che rappresentano il tempo rimanente
+    wattron(win, COLOR_PAIR(COLOR_RED));  
+    for (int i = 0; i < remainingBlocks; i++) {
+        wprintw(win, "░");
+    }
+    wattroff(win, COLOR_PAIR(COLOR_RED));  
+    
+    wprintw(win, "]");
+    pthread_mutex_unlock(&ncurses_mutex);    
+}
+    
+
+int timerHandler(Game *game, int *millisecondCounter, int countdownTime, int timerMax) {
+    *millisecondCounter += 5;  // Incrementa il contatore del millisecondo di 5
+
+    if (*millisecondCounter >= 1000) {  // Ogni secondo
+        *millisecondCounter = 0;  // Reset del contatore dei millisecondi
+        countdownTime--;  // Diminuisce il tempo rimasto
+    }
+    return countdownTime;  // Ritorna il tempo rimanente
+}
+

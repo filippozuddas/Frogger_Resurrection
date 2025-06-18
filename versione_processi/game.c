@@ -110,14 +110,14 @@ void runGame(Game* game, int game_socket_fd) {
 
     int playerCrocID = 0;           /* ID del del coccodrillo sul quale si trova la rana */
     int grenadeID = N_CROC + 1;     /* ID della granata, utilizzato durante la creazione */
-    int countdownTime = 90;         /* Tempo iniziale per il countdown in secondi */
+    int countdownTime = 45;         /* Tempo iniziale per il countdown in secondi */
     
     /* Imposta il tempo della manche in base alla difficoltà */
     switch (game->difficulty) {
-        case 0: countdownTime = 60; break;
-        case 1: countdownTime = 45; break;
-        case 2: countdownTime = 30; break;
-        default: countdownTime = 60; break; 
+        case 0: countdownTime = 45; break;
+        case 1: countdownTime = 30; break;
+        case 2: countdownTime = 20; break;
+        default: countdownTime = 45; break; 
     }
 
     int millisecondCounter = 0;
@@ -127,6 +127,33 @@ void runGame(Game* game, int game_socket_fd) {
         usleep(6000);  /* Controllo del timer ogni 6 millisecondi */
     
         countdownTime = timerHandler(game, &millisecondCounter, countdownTime, timerMax); 
+
+        if (countdownTime <= 0) {
+            frog->lives--; 
+            frog->info.x = ((GAME_WIDTH - 1) / 2) - 4; 
+            frog->info.y = GAME_HEIGHT - 5;
+            frog->info.grenadesRemaining = 10;
+            
+            // Reset del timer quando la rana muore
+            countdownTime = timerMax;  
+            millisecondCounter = 0; 
+            
+            if (frog->lives == 0) {
+                stopMusic();
+                int isDead = 1; 
+                handleScores(game, countdownTime, isDead);
+                game->isRunning = 0; 
+
+                break;
+            }
+
+            terminateGrenades(game);
+            terminateProjectiles(game);
+            resetCroc(game); 
+
+            continue;
+        }
+
         int status;
         pid_t exited_pid;
         while ((exited_pid = waitpid(-1, &status, WNOHANG)) > 0) {
@@ -469,95 +496,6 @@ void printYouWon(WINDOW *win){
     //wrefresh(win);
 }
 
-int restartMenu(Game *game, int score, int flag) {
-    init_pair(1, COLOR_RED, COLOR_BLACK);
-    // werase(game->gameWin);
-    // wrefresh(game->gameWin);
-    // usleep(10000);
-
-    int height = 70; 
-    int width = 200; 
-    int starty = (LINES - height) / 2; 
-    int startx = (COLS - width) / 2; 
-    WINDOW *restartWin = newwin(height, width, starty, startx); 
-    if (!restartWin) {
-        endwin();
-        fprintf(stderr, "Errore nella creazione della finestra di restart.\n");
-        exit(1);
-    }
-
-    int highlight = 1;
-    int choice = 0;
-    int c;
-    
-    // Stampa GAME OVER o YOU WON
-    if (flag == 0) {
-        printGameOver(game->gameWin);
-    } else if (flag == 1) {
-        printYouWon(game->gameWin);
-    }
-    // wrefresh(game->gameWin);
-    // sleep(1);
-
-    // Calcola le posizioni per centrare il punteggio
-    int centerX = 72;
-    int scoreY = height - 22;  // Posizione Y dello score
-
-    // Stampa il punteggio grande
-    digitsAnalyser(game->gameWin, score, scoreY, centerX);
-    wrefresh(game->gameWin);
-    sleep(3);
-    
-    // Verifica e aggiorna il display
-    //wrefresh(restartWin);
-    addScore(&scoreList, game->frog.score);
-    
-    // Setup menu
-    keypad(restartWin, TRUE);
-    int n_choices = sizeof(restart) / sizeof(MenuOption);
-    print_menu(restartWin, highlight, restart, n_choices);
-    wrefresh(restartWin);
-
-    // Loop del menu
-    while ((c = wgetch(restartWin)) != 0) {
-        switch (c) {
-            case KEY_UP:
-                highlight = (highlight == 1) ? n_choices : highlight - 1;
-                break;
-            case KEY_DOWN:
-                highlight = (highlight == n_choices) ? 1 : highlight + 1;
-                break;
-            case 10:  // Invio
-                choice = highlight;
-                break;
-                // if (choice == 1) {
-                //     wclear(game->gameWin);
-                //     wrefresh(game->gameWin);
-                //     initGame(game);
-                //     runGame(game);
-                //     stopGame(game);
-                //     return;
-                // } else if (choice == 2) {
-                //     wclear(game->gameWin);
-                //     wrefresh(game->gameWin);
-                //     mainMenu(game);
-                //     return;
-                // }
-            default:
-                break;
-        }
-        print_menu(restartWin, highlight, restart, n_choices);
-        wrefresh(restartWin);
-        if (choice != 0)
-            break;
-    }
-    delwin(restartWin);
-    return choice;
-}
-
-
-
-
 void drawLives(WINDOW *win, int lives) {
     // Calcola la posizione centrale per i cuori
     int heartsWidth = lives * 2;  // Ogni cuore occupa 2 spazi
@@ -606,15 +544,6 @@ int timerHandler(Game *game, int *millisecondCounter, int countdownTime, int tim
     if (*millisecondCounter >= 1000) {  // Ogni secondo
         *millisecondCounter = 0;  // Reset del contatore dei millisecondi
         countdownTime--;  // Diminuisce il tempo rimasto
-
-        // Se il tempo è scaduto, termina il gioco
-        if (countdownTime <= 0) {
-            countdownTime = 0; 
-            game->isRunning = 0;  // Ferma il gioco
-            int flag = 0;
-            restartMenu(game, game->frog.score, flag);
-        
-        }
     }
     return countdownTime;  // Ritorna il tempo rimanente
 }

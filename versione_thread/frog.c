@@ -16,27 +16,6 @@ void createFrog(Game *game) {
 }
     
 void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex){
-
-    // Grenade* grenade = malloc(sizeof(Grenade));
-
-    // int grenadeID, grenadeIndex = findFreeGrenadeSlot(game);
-
-    // grenadeID++;
-
-    // if (grenadeIndex >= 0) {
-        
-    //     pthread_mutex_lock(&granades_mutex);
-    //     game->grenades[grenadeIndex].info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH : game->frog.info.x - 1;
-    //     game->grenades[grenadeIndex].info.y = game->frog.info.y;
-    //     game->grenades[grenadeIndex].info.direction = direction;
-    //     game->grenades[grenadeIndex].info.speed = 3; // Example speed
-    //     game->grenades[grenadeIndex].info.ID = grenadeID; // Use provided ID
-    //     game->grenades[grenadeIndex].info.active = 1;      // Mark as active
-        
-    //     pthread_mutex_unlock(&granades_mutex);
-    //     pthread_create(&game->grenades[grenadeIndex].thread, NULL, (void  *)moveGrenade, (void *)game->grenades); 
-    // }
-
     Grenade *grenade = &game->grenades[grenadeIndex];
 
     grenade->info.x = (direction == 1) ? game->frog.info.x + FROG_WIDTH - 1 : game->frog.info.x - 1; 
@@ -80,27 +59,14 @@ void moveGrenade(void * params) {
 }
 
 void terminateGrenades(Game *game) {
-
-    pthread_mutex_lock(&granades_mutex); // Lock protecting shared resources
-
     for (int i = 0; i < MAX_GRENADES; i++) {
         if (game->grenades[i].info.active) {
-            int cancel_result = pthread_cancel(game->grenades[i].thread);
-            if (cancel_result != 0) {
-                fprintf(stderr, "Error cancelling thread %d: %s\n", i, strerror(cancel_result));
-            } else {
-                int join_result = pthread_join(game->grenades[i].thread, NULL);
-                if (join_result != 0) {
-                    fprintf(stderr, "Error joining thread %d: %s\n", i, strerror(join_result));
-                } else {
-                    game->grenades[i].info.active = 0;
-                    game->grenades[i].info.ID = -1;
-                }
-            }
+            pthread_cancel(game->grenades[i].thread);
+            pthread_join(game->grenades[i].thread, NULL); 
+            game->grenades[i].info.active = 0; 
+            game->grenades[i].info.ID = -1;
         }
     }
-
-    pthread_mutex_unlock(&granades_mutex); // Unlock
 }
 
 int findFreeGrenadeSlot(Game *game) {

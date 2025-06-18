@@ -75,10 +75,6 @@ void animate_welcome() {
 
 void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choices) {
     int x = 1, y = 1;
-    if(menu == restart){
-        x = 45;
-        y = 30;
-    }
 
     for(int i = 0; i < n_choices; ++i) {
         if(highlight == i + 1) {

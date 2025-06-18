@@ -16,10 +16,6 @@ void printYouWon(WINDOW *win);
 
 void drawLives(WINDOW *win, int lives);
 void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax);
-void createTimer(Game *game); // Prototype
-void *timerThread(void *arg); // Prototype
-
-
-
+int timerHandler(Game *game, int *millisecondCounter, int countdownTime, int timerMax);
 
 

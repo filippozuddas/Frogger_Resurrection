@@ -56,42 +56,43 @@ bool readMain(Informations* info) {
 //usata dal consumatore per scrivere nel buffer condiviso verso i produttori, dal quale frog e croc leggono
 void writeProd(Informations oggetto) {
     sem_wait(&sem_free2);  // Wait for space in croc buffer
-    pthread_mutex_lock(&buffer_mutex);
+    pthread_mutex_lock(&buffer2_mutex);
     buffer2[index_write2] = oggetto;
     index_write2 = (index_write2 + 1) % DIM_BUFFER2;
-    pthread_mutex_unlock(&buffer_mutex);
+    pthread_mutex_unlock(&buffer2_mutex);
     sem_post(&sem_occupied2); // Signal croc buffer has data
 }
 
 Informations readProd() {
     Informations info;
     if (sem_trywait(&sem_occupied2) == 0) { 
-        pthread_mutex_lock(&buffer_mutex);
+        pthread_mutex_lock(&buffer2_mutex);
         info = buffer2[index_read2];
         index_read2 = (index_read2 + 1) % DIM_BUFFER;
-        pthread_mutex_unlock(&buffer_mutex);
+        pthread_mutex_unlock(&buffer2_mutex);
         sem_post(&sem_free2);
-        return info;
     }
+    return info;
 }
 
 void resetBuffer() {
-    // Reset main buffer
     pthread_mutex_lock(&buffer_mutex);
+    
+    // Reset solo per il buffer principale
     index_write = 0;
     index_read = 0;
-    while (sem_trywait(&sem_occupied) == 0); // Empty the buffer
+    
+    // Svuota il semaforo degli elementi occupati
+    while (sem_trywait(&sem_occupied) == 0) {
+        // Continua a consumare finché il semaforo è vuoto
+    }
+    
+    // Ripristina il semaforo dei posti liberi
+    // (Questo assicura che il produttore non si blocchi)
     for (int i = 0; i < DIM_BUFFER; ++i) {
-        sem_post(&sem_free); // Fill with free slots
+        sem_post(&sem_free);
     }
-
-    // Reset buffer2
-    index_write2 = 0;
-    index_read2 = 0;
-    while (sem_trywait(&sem_occupied2) == 0);
-    for (int i = 0; i < DIM_BUFFER2; ++i) {
-        sem_post(&sem_free2);
-    }
+    
     pthread_mutex_unlock(&buffer_mutex);
 }
 
