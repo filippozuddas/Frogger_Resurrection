@@ -1,5 +1,35 @@
+# Controllo delle dipendenze
+check_deps:
+	@command -v sdl2-config >/dev/null 2>&1 || { \
+		echo "SDL2 non trovato. Vuoi installarlo? [S/n]"; \
+		read ans; \
+		if [ "$$ans" = "S" ] || [ "$$ans" = "s" ] || [ -z "$$ans" ]; then \
+			sudo apt-get update && sudo apt-get install libsdl2-dev; \
+		else \
+			echo "SDL2 è richiesto per la compilazione!"; exit 1; \
+		fi \
+	}
+	@pkg-config --exists SDL2_mixer || { \
+		echo "SDL2_mixer non trovato. Vuoi installarlo? [S/n]"; \
+		read ans; \
+		if [ "$$ans" = "S" ] || [ "$$ans" = "s" ] || [ -z "$$ans" ]; then \
+			sudo apt-get update && sudo apt-get install libsdl2-mixer-dev; \
+		else \
+			echo "SDL2_mixer è richiesto per la compilazione!"; exit 1; \
+		fi \
+	}
+	@ldconfig -p | grep libncursesw >/dev/null 2>&1 || { \
+		echo "ncursesw non trovato. Vuoi installarlo? [S/n]"; \
+		read ans; \
+		if [ "$$ans" = "S" ] || [ "$$ans" = "s" ] || [ -z "$$ans" ]; then \
+			sudo apt-get update && sudo apt install libncurses5-dev libncursesw5-dev; \
+		else \
+			echo "ncursesw è richiesto per la compilazione!"; exit 1; \
+		fi \
+	}
+
 # Regola principale per creare entrambi gli eseguibili
-all: frogger_server frogger_client
+all: check_deps frogger_server frogger_client
 
 # Regola per la creazione dell'eseguibile frogger (server)
 frogger_server: main.o menu.o crocodile.o frog.o game.o sprite.o colors.o map.o thread.o score.o music.o socket.o
