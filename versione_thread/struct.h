@@ -69,13 +69,6 @@ typedef struct ScoreEntry{
     int difficulty;  // 0=Easy, 1=Medium, 2=Hard, 3=Expert
 } ScoreEntry;
 
-typedef struct Timer{
-    int countdownTime;
-	int millisecondCounter;
-	int timerMax;
-    pthread_t thread; // Add a member to Game to store the timer thread ID
-} Timer;
-
 typedef struct Game{
     unsigned int isRunning; 
     Frog frog; 
@@ -84,6 +77,5 @@ typedef struct Game{
     Projectile projectiles[MAX_PROJECTILES];
     Den dens[N_DENS];
     WINDOW *gameWin;
-    Timer timer;
     int difficulty;
 } Game;

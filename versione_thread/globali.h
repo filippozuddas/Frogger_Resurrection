@@ -5,7 +5,7 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-#define N_FLOW 8
+#define N_FLOW 13
 #define CROC_PER_FLOW 2
 #define N_CROC (N_FLOW * CROC_PER_FLOW)
 #define CROC_HEIGHT 4
