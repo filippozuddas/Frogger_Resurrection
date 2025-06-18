@@ -30,8 +30,8 @@ void initDens(Game *game) {
 }
 
 void initGame(Game *game) {
-    keypad(stdscr, TRUE);
-    nodelay(stdscr, TRUE);
+    // keypad(stdscr, TRUE);
+    // nodelay(stdscr, TRUE);
 
     srand(time(NULL)); 
 
@@ -59,10 +59,11 @@ void initGame(Game *game) {
     /* Creazione della finestra di gioco */
     game->gameWin = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx);
     nodelay(game->gameWin, TRUE);
+    keypad(game->gameWin, TRUE);
     
     inizializza_mappa();
     initDens(game); 
-    disegna_mappa(game);
+    //disegna_mappa(game);
     
     
 

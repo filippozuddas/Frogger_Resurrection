@@ -378,29 +378,27 @@ void runGame(Game* game, int game_socket_fd) {
 }
        
 void stopGame(Game *game) {
-        // Terminate all active threads (projectiles, grenades, crocodiles)
-        for(int i = 0; i < MAX_PROJECTILES; i++) {
-            if(game->projectiles[i].info.ID != -1) {
-                pthread_cancel(game->projectiles[i].thread);
-                pthread_join(game->projectiles[i].thread, NULL);
-            }
+    // Terminate all active threads (projectiles, grenades, crocodiles)
+    for(int i = 0; i < MAX_PROJECTILES; i++) {
+        if(game->projectiles[i].info.ID != -1) {
+            pthread_cancel(game->projectiles[i].thread);
+            pthread_join(game->projectiles[i].thread, NULL);
         }
-        for(int i = 0; i < MAX_GRENADES; i++) {
-            if(game->grenades[i].info.ID != -1) {
-                pthread_cancel(game->grenades[i].thread);
-                pthread_join(game->grenades[i].thread, NULL);
-            }
+    }
+    for(int i = 0; i < MAX_GRENADES; i++) {
+        if(game->grenades[i].info.ID != -1) {
+            pthread_cancel(game->grenades[i].thread);
+            pthread_join(game->grenades[i].thread, NULL);
         }
+    }
+    for(int i = 0; i < N_CROC; i++) {
+        if(game->crocodile[i].info.ID != -1){
+             pthread_cancel(game->crocodile[i].thread);
+            pthread_join(game->crocodile[i].thread, NULL);
+        }
+    }
 
-
-        for(int i = 0; i < N_CROC; i++) {
-            if(game->crocodile[i].info.ID != -1){
-                 pthread_cancel(game->crocodile[i].thread);
-                pthread_join(game->crocodile[i].thread, NULL);
-            }
-        }
-    
-        werase(game->gameWin); 
+    werase(game->gameWin); 
 
 	if (game->frog.lives == 0 || timerHandler(&game, NULL, 0, 0) <= 0) {
         printGameOver(game->gameWin);
