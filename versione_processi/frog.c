@@ -1,5 +1,6 @@
 #include "frog.h"
 
+// Inizializza i valori della rana (player)
 void createFrog(Game *game) {
     /* inizializzazione frog */
     /* le coordinate x e y si riferiscono all'angolo in alto a sinistra della sprite */
@@ -15,6 +16,7 @@ void createFrog(Game *game) {
     frog->isOnCroc = 0; 
 }
 
+// Controlla se la posizione della rana coincide con quella dell'hitbox di un coccodrillo 
 int checkCollision(Informations frogInfo, Informations crocInfo) {
     if (frogInfo.y == crocInfo.y && 
         frogInfo.x >= crocInfo.x && 
@@ -24,6 +26,7 @@ int checkCollision(Informations frogInfo, Informations crocInfo) {
     return 0; 
 }
 
+// Controlla se la rana è su un coccodrillo
 int isFrogOnCroc(Game *game) {
     for (int i = 0; i < N_CROC; i++) {
         if(checkCollision(game->frog.info, game->crocodile[i].info)) {
@@ -36,15 +39,15 @@ int isFrogOnCroc(Game *game) {
     return 0; 
 }
 
+// Controlla se la rana è nell'acqua (fiume principale)
 int isFrogOnRiver(Game *game) {
-    // La rana è "nell'acqua" solo tra la riga 14 (inizio del fiume) e la riga 51 (fine del fiume)
     if (game->frog.info.y > 14 && game->frog.info.y < 65) {
-        return 1;  // La rana è nell'acqua
+        return 1;  
     }
-    return 0;  // La rana non è nell'acqua
+    return 0;  
 }
 
-
+// Controlla se la rana è su una delle tane
 int isFrogOnDen(Game *game) {
     Frog *frog = &game->frog;
 
@@ -63,6 +66,7 @@ int isFrogOnDen(Game *game) {
 }
 
 
+// Controlla se la rana è sulla sponda superiore
 int isFrogOnTopBank(Game *game) {
     if (game->frog.info.y >= 9 && game->frog.info.y <= 12) {
         return 1; 
@@ -70,6 +74,7 @@ int isFrogOnTopBank(Game *game) {
     return 0;
 }
 
+// Controlla se la rana è caduta nell'acqua sopra la sponda superiore
 int isFrogOnTopRiver(Game *game) {
     if (game->frog.info.y < 9 && isFrogOnDen(game) == 0) {
         return 1; 
@@ -77,6 +82,7 @@ int isFrogOnTopRiver(Game *game) {
     return 0; 
 }
 
+// Inizializza una granata e crea il relativo processo 
 void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex) {
     Grenade grenade; 
 
@@ -102,6 +108,7 @@ void createGrenade(Game *game, int direction, int grenadeId, int grenadeIndex) {
 
 }
 
+// Funzione che gestisce il movimento della granata
 void moveGrenade(Grenade *grenade, Game *game, int grenadeIndex) {
     while(1) {
         if (grenade->info.direction == 1) {
@@ -123,16 +130,18 @@ void moveGrenade(Grenade *grenade, Game *game, int grenadeIndex) {
     _exit(0);
 }
 
+// Gestisce la terminazione delle granate, terminando i processi e liberando gli slot nell'array
 void terminateGrenades(Game *game) {
     for (int i = 0; i < MAX_GRENADES; i++) {
         if (game->grenades[i].info.ID != -1) {
             kill(game->grenades[i].info.pid, SIGKILL);
-            waitpid(game->grenades[i].info.pid, NULL, 0); //  terminazione
-            game->grenades[i].info.ID = -1; // Libera lo slot
+            waitpid(game->grenades[i].info.pid, NULL, 0); 
+            game->grenades[i].info.ID = -1; 
         }
     }
 }
 
+// Controlla se la rana o una granata è stata colpita da un proiettile
 int checkCollisionProjectile(Informations entity, Projectile projectile) {
     if ((entity.y == projectile.info.y || entity.y + 2 == projectile.info.y) &&
          entity.x + FROG_WIDTH >= projectile.info.x && 

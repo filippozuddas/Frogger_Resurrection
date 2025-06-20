@@ -1,5 +1,6 @@
 #include "music.h"
 
+// Funzione per inizializzare l'audio con SDL e SDL_mixer
 int initAudio() {
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         printf("Errore inizializzazione SDL: %s\n", SDL_GetError());
@@ -13,6 +14,7 @@ int initAudio() {
     return 1;
 }
 
+// Funzione per caricare e riprodurre un file audio
 void startMusic(const char* file) {
     Mix_Music *music = Mix_LoadMUS(file);
     if (!music) {
@@ -26,10 +28,12 @@ void startMusic(const char* file) {
     }
 }
 
+// Funzione per fermare la musica in riproduzione
 void stopMusic() {
     Mix_HaltMusic();
 }
 
+// Funzione per terminare l'audio e de-inizializzare SDL
 void terminateAudio() {
     Mix_CloseAudio();
     SDL_Quit();

@@ -42,71 +42,80 @@
 
 #define DIGIT_HEIGHT 3
 
+/* Struttura base per le informazioni comuni di oggetti di gioco */
 typedef struct {
-    int x; 
-    int y; 
-    int direction; 
-    int speed; 
-    int ID;   // 0 = frog, 1 = croc
-    int grenadesRemaining; 
-    pid_t pid;
+    int x;                  // Posizione X 
+    int y;                  // Posizione Y
+    int direction;          // Direzione di movimento
+    int speed;              // Velocità di movimento
+    int ID;                 // Identificatore univoco
+    int grenadesRemaining;  // Numero di granate rimanenti
+    pid_t pid;              // PID del processo
 } Informations;
 
+/* Struttura per i coccodrilli */
 typedef struct Crocodile{
-    Informations info;
-    int mainToCrocPipe[2];
+    Informations info;      // Informazioni base del coccodrillo
+    int mainToCrocPipe[2];  // Pipe inversa per comunicazione processo principale-coccodrillo
 } Crocodile;
 
+/* Struttura per la rana (giocatore) */
 typedef struct Frog {
-    Informations info;
-    int lives; 
-    int score; 
-    int isOnCroc; 
-    int onCrocIdx;
-    int onCrocOffset; 
+    Informations info;      // Informazioni base della rana
+    int lives;              // Vite rimanenti
+    int score;              // Punteggio attuale
+    int isOnCroc;           // Flag: 1 se la rana è su un coccodrillo, 0 altrimenti
+    int onCrocIdx;          // Indice del coccodrillo su cui si trova la rana
+    int onCrocOffset;       // Offset della posizione della rana sul coccodrillo
 } Frog; 
 
+/* Struttura per le granate */
 typedef struct Grenade {
-    Informations info; 
+    Informations info;      // Informazioni base della granata
 } Grenade;
 
+/* Struttura per i proiettili */
 typedef struct Projectile {
-    Informations info;
+    Informations info;      // Informazioni base del proiettile
 } Projectile;
 
+/* Struttura per le tane */
 typedef struct Den {
-    int x; 
-    int y; 
-    int width; 
-    int height;
-    int isOpen; 
+    int x;                  // Posizione X della tana
+    int y;                  // Posizione Y della tana
+    int width;              // Larghezza della tana
+    int height;             // Altezza della tana
+    int isOpen;             // Flag: 1 se la tana è aperta, 0 altrimenti
 } Den;
 
+/* Struttura principale del gioco */
 typedef struct Game{
-    unsigned int isRunning; 
-    int pipeFd[2]; 
-    int mainToFrogPipe[2];
-    Frog frog; 
-    Crocodile crocodile[N_CROC];
-    Grenade grenades[MAX_GRENADES];
-    Projectile projectiles[MAX_PROJECTILES];
-    Den dens[N_DENS];
-    WINDOW *gameWin;
-    int difficulty;
+    unsigned int isRunning; // Flag: 1 se il gioco è in esecuzione, 0 altrimenti
+    int pipeFd[2];          // Pipe principale
+    Frog frog;              // Istanza della rana (giocatore)
+    Crocodile crocodile[N_CROC]; // Array dei coccodrilli
+    Grenade grenades[MAX_GRENADES]; // Array delle granate
+    Projectile projectiles[MAX_PROJECTILES]; // Array dei proiettili
+    Den dens[N_DENS];       // Array delle tane
+    WINDOW *gameWin;        // Finestra del gioco 
+    int difficulty;         // Livello di difficoltà
 } Game;
 
+/* Struttura per le opzioni di menu */
 typedef struct {
-    int id;
+    int id;                 // Identificatore dell'opzione
     const wchar_t *text[5]; // Array di stringhe per ogni opzione
 } MenuOption;
 
+/* Struttura per un nodo nella lista dei punteggi */
 typedef struct ScoreNode {
-    int score;
-    struct ScoreNode* next;
+    int score;              // Punteggio
+    struct ScoreNode* next; // Puntatore al prossimo nodo
 } ScoreNode;
 
+/* Struttura per un'entrata nel punteggio */
 typedef struct {
-    int score;
-    char date[20];
-    int difficulty;  // 0=Easy, 1=Medium, 2=Hard, 3=Expert
+    int score;              // Punteggio
+    char date[20];          // Data del punteggio
+    int difficulty;         // Difficoltà: 0=Facile, 1=Medio, 2=Difficile
 } ScoreEntry;

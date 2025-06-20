@@ -1,10 +1,10 @@
 # Il target 'all' costruisce sia il server che il client
 all: frogger_server frogger_client
 
-# Oggetti necessari per il SERVER
+# File oggetto necessari per il SERVER
 SERVER_OBJS = main.o game.o menu.o crocodile.o frog.o sprite.o colors.o map.o communication.o music.o socket.o
 
-# Oggetti necessari per il CLIENT
+# File oggetto necessari per il CLIENT
 CLIENT_OBJS = client.o socket.o
 
 # Regola per creare l'eseguibile del SERVER

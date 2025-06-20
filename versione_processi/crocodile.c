@@ -13,7 +13,6 @@ int flowSpeed[N_FLOW];
 int MIN_V;  
 int MAX_V; 
 
-
 /*
  * isPositionValid controlla se la nuova x è sufficientemente distante
  * da altri coccodrilli “già posizionati” sulla stessa riga (usato dal processo padre).
@@ -33,8 +32,10 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
     return 1; // posizione valida
 }
 
+// createCroc crea i processi coccodrillo e li inizializza con le informazioni necessarie.
 void createCroc(Game *game) {
     
+    // Setting della velocità in base alla difficoltà scelta
     switch (game->difficulty) {
         case 2:
             MIN_V = 3;
@@ -54,12 +55,10 @@ void createCroc(Game *game) {
             break;
     }
 
+    srand(time(NULL)); 
 
-
-    srand(time(NULL)); // Inizializza il generatore di numeri casuali
-
-    int crocID = 1;          // Conta i coccodrilli totali
-    int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
+    int crocID = 1;
+    int placedCrocCount = 0; 
 
     /* Inizializza la direzione (0 => destra; 1 => sinistra) e velocità dei flussi */
     flowDirection[0] = rand() % 2; 
@@ -78,17 +77,17 @@ void createCroc(Game *game) {
 
             // Ciclo per trovare una posizione non sovrapposta
             while (!validPosition) {
-                // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
+                // x casuale interna al limite della mappa di gioco 
                 spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
                 validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
             }
 
             // Controlla che crocID non superi il numero massimo di coccodrilli
             if (crocID - 1 >= N_CROC) {
-                //fprintf(stderr, "Errore: crocID supera il numero massimo di coccodrilli\n");
                 exit(EXIT_FAILURE);
             }
 
+            // Puntatore al coccodrillo corrente 
             Crocodile *croc = &game->crocodile[crocID - 1]; 
 
             // Inizializzo i valori prima della fork 
@@ -98,12 +97,13 @@ void createCroc(Game *game) {
             croc->info.speed = flowSpeed[flow]; 
             croc->info.ID = crocID;
 
-            // Crea la pipe per il coccodrillo
+            // Creazione della pipe per il coccodrillo, utilizzata per il reset alla termine di una manche 
             if (pipe(croc->mainToCrocPipe) < 0) {
                 perror("Pipe creation error"); 
                 exit(EXIT_FAILURE); 
             }
 
+            // creazione del processo coccodrillo 
             pid_t pid = fork();
             if (pid < 0) {
                 perror("Fork failed");
@@ -114,10 +114,11 @@ void createCroc(Game *game) {
                 close(croc->mainToCrocPipe[1]); // Chiudi il lato di scrittura della pipe
                 close(game->pipeFd[0]); // Chiudi il lato di lettura della pipe principale
 
+                // funzione per muovere il coccodrillo
                 moveCroc(croc, game->pipeFd);
                 _exit(0); // Termina il processo figlio
             } else { // Processo padre
-                croc->info.pid = pid; 
+                croc->info.pid = pid;   // Salvo il pid del processo coccodrillo
                 close(croc->mainToCrocPipe[0]); // Chiudi il lato di lettura della pipe
 
                 crocID++;
@@ -129,10 +130,13 @@ void createCroc(Game *game) {
 
 void moveCroc(Crocodile *croc, int *pipeFd) {
 
+    // setting della lettura non bloccante della pipe inversa
     int flags = fcntl(croc->mainToCrocPipe[0], F_GETFL, 0);
     fcntl(croc->mainToCrocPipe[0], F_SETFL, flags | O_NONBLOCK);
 
+    // ciclo infinito per il movimento del coccodrillo
     while (1) {
+        // lettura delle informazioni dalla pipe inversa per un eventuale reset del coccodrillo
         Informations newInfo;
         if (readData(croc->mainToCrocPipe[0], &newInfo, sizeof(Informations)) > 0) {
             croc->info.x = newInfo.x; 
@@ -141,6 +145,7 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             croc->info.speed = newInfo.speed; 
         }
 
+        // logica di movimento del coccodrillo
         if (croc->info.direction == 0) {
             croc->info.x++; 
             if (croc->info.x >= GAME_WIDTH + 1 + CROC_LENGHT) {
@@ -153,15 +158,21 @@ void moveCroc(Crocodile *croc, int *pipeFd) {
             }
         }
 
+        // Scrittura delle informazioni aggiornate nella pipe principale
         if (writeData(pipeFd[1], &croc->info, sizeof(Informations)) == -1) {
             perror("Errore nella scrittura sulla pipe");
             exit(EXIT_FAILURE);
         }
 
+        // gestione della velocità del coccodrillo
         usleep((MAX_V + MIN_V - croc->info.speed) * 10000);
     }
 }
 
+/* 
+ * funzione per resettare i coccodrilli alla fine di una manche, senza terminare i processi
+ * essenzialmente identica alla createCroc, ma senza fork
+ */
 void resetCroc(Game *game) {
 
     switch (game->difficulty) {
@@ -185,32 +196,25 @@ void resetCroc(Game *game) {
 
     srand(time(NULL));
 
-    int crocID = 1;          // Conta i coccodrilli totali
-    int placedCrocCount = 0; // Quantità di coccodrilli effettivamente posizionati
+    int crocID = 1;          
+    int placedCrocCount = 0; 
 
-    /* Inizializza la direzione (0 => destra; 1 => sinistra) e velocità dei flussi */
     flowDirection[0] = rand() % 2; 
     for (int i = 1; i < N_FLOW; i++) flowDirection[i] = !flowDirection[i - 1]; 
     for (int i = 0; i < N_FLOW; i++) flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
 
-    // Creazione dei coccodrilli (N_FLOW flussi, CROC_PER_FLOW ciascuno)
     for (int flow = 0; flow < N_FLOW; flow++) {
         for (int j = 0; j < CROC_PER_FLOW; j++) {
-            // Decidiamo la y in base al flusso corrente
             int spawnY = (GAME_HEIGHT - 9) - (flow * CROC_HEIGHT);
 
-            // Trova x casuale valida
             int spawnX = 0;
             int validPosition = 0;
 
-            // Ciclo per trovare una posizione non sovrapposta
             while (!validPosition) {
-                // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
                 spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
                 validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
             }
 
-            // Controlla che crocID non superi il numero massimo di coccodrilli
             if (crocID - 1 >= N_CROC) {
                 fprintf(stderr, "Errore: crocID supera il numero massimo di coccodrilli\n");
                 exit(EXIT_FAILURE);
@@ -235,6 +239,7 @@ void resetCroc(Game *game) {
     }
 }
 
+// killCroc termina tutti i processi coccodrillo e attende la loro terminazione
 void killCroc(Game *game) {
     for (int i = 0; i < N_CROC; i++) {
         kill(game->crocodile[i].info.pid, SIGKILL); 
@@ -242,7 +247,9 @@ void killCroc(Game *game) {
     }
 }
 
+//  createProjectile crea un nuovo proiettile associato a un coccodrillo.
 void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID) {
+    // inizializzazione dei valori del proiettile
     Projectile projectile; 
 
     projectile.info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x; 
@@ -251,6 +258,7 @@ void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID
     projectile.info.speed = 2;
     projectile.info.ID = projectileID; 
 
+    // crezione del processo proiettile
     pid_t pid = fork();
 
     if (pid < 0) {
@@ -261,8 +269,15 @@ void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID
         exit(0);
     }
     else {
+        // salvo il pid del processo proiettile
         projectile.info.pid = pid;
 
+
+        /*
+         * Scansiona l'array `game->projectiles` per trovare un elemento il cui campo ID sia -1,
+         * che indica uno slot non utilizzato. Una volta trovato il primo slot libero, memorizza
+         * il suo indice, interrompe la ricerca e assegna il nuovo proiettile a quella posizione.
+         */
         int projectileIndex = -1;
         for(int i = 0; i < MAX_PROJECTILES; i++){
             if(game->projectiles[i].info.ID == -1){
@@ -271,13 +286,12 @@ void createProjectile(Crocodile *croc, int *pipeFd, Game *game, int projectileID
             }
         }
         game->projectiles[projectileIndex] = projectile;
-        //fprintf(stderr, "[PADRE] Creato proiettile ID: %d, PID figlio: %d\n", projectileID, pid); // DEBUG: Stampa dopo la creazione
     }
 }
 
+// moveProjectile gestisce il movimento del proiettile, aggiornando la sua posizione e inviando le informazioni tramite pipe
 void moveProjectile(Projectile *projectile, int *pipeFd) {
     while(1) {
-        //fprintf(stderr, "[FIGLIO Proiettile] ID: %d, PID: %d\n", projectile.info.ID, getpid()); // DEBUG: Stampa ID e PID
         if (projectile->info.direction == 0) {
             projectile->info.x++;
             if (projectile->info.x > GAME_WIDTH) break;
@@ -287,19 +301,24 @@ void moveProjectile(Projectile *projectile, int *pipeFd) {
             if (projectile->info.x < -3) break;
         }
 
-        //fprintf(stderr, "[FIGLIO Proiettile] Invio: ID: %d, X: %d, Y: %d, PID: %d\n", projectile->info.ID, projectile->info.x, projectile->info.y, getpid()); // DEBUG
         writeData(pipeFd[1], &projectile->info, sizeof(Informations));
         usleep(projectile->info.speed * 10000);
     }
-    //fprintf(stderr, "[FIGLIO Proiettile] Termino ID: %d, PID: %d\n", projectile->info.ID, getpid()); // DEBUG: Terminazione
     _exit(0);
 }
 
+/* 
+ * handleProjectileGeneration gestisce la generazione dei proiettili in modo casuale
+ * basandosi sulla visibilità dei coccodrilli e sul tempo trascorso dall'ultimo tiro.
+ */
 void handleProjectileGeneration(Game *game) {
+    // creazione di una variabile time_t per tenere traccia dell'ultimo tiro
     static time_t lastShotTime = 0;
     time_t currentTime = time(NULL);
 
+    // Se il tempo trascorso dall'ultimo tiro è maggiore o uguale a 2 secondi e un numero casuale è 1 (probabilità dell'1%)
     if ((rand() % 100 == 1) && (currentTime - lastShotTime >= 2)) {
+        // Trova i coccodrilli visibili
         int visibleCrocs[N_CROC];
         int visibleCount = 0;
 
@@ -310,6 +329,7 @@ void handleProjectileGeneration(Game *game) {
             }
         }
 
+        // Se ci sono coccodrilli visibili, seleziona uno di loro casualmente
         if (visibleCount > 0) {
             int selectedCroc = visibleCrocs[rand() % visibleCount];
 
@@ -322,13 +342,13 @@ void handleProjectileGeneration(Game *game) {
                 }
             }
 
-            // Se abbiamo trovato uno slot libero...
+            // Se abbiamo trovato uno slot libero
             if (projectileIndex != -1) {
-                // Genera un ID univoco (usa un timestamp o un contatore globale)
+                // Genera un ID univoco
                 static int nextProjectileID = 57; 
                 int projectileID = nextProjectileID++;
 
-
+                // Crea il proiettile associato al coccodrillo selezionato
                 createProjectile(&game->crocodile[selectedCroc], game->pipeFd, game, projectileID);
                 lastShotTime = currentTime;
             }
@@ -336,6 +356,7 @@ void handleProjectileGeneration(Game *game) {
     }
 }
 
+// terminateProjectiles termina tutti i processi proiettile e libera gli slot nell'array
 void terminateProjectiles(Game *game) {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (game->projectiles[i].info.ID != -1) {
