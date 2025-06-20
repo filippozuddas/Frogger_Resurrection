@@ -1,13 +1,15 @@
 #include "colors.h"
 
+// Definizione dei colori utilizzati nel gioco
 void initColors(short c, short r, short g, short b) {
     init_color(c, r * RGB_CONVERTER, g * RGB_CONVERTER, b * RGB_CONVERTER);  
 }
 
+// Funzione per inizializzare i colori utilizzando init_color
 void setColors() {
 
 
-    /* Crocodile */
+    // Inizializzazione dei colori per i coccodrilli
     initColors(CROC_GREEN, 173,255,47);
     initColors(CROC_WHITE, 255,250,250); 
     initColors(CROC_BLACK, 0, 0, 0); 
@@ -22,10 +24,10 @@ void setColors() {
     init_pair(WHITE_GREEN, CROC_WHITE, CROC_GREEN); 
     init_pair(BG_BLACK, COLOR_BLUE, CROC_BLACK); 
     init_pair(BG_GREEN , COLOR_BLACK, COLOR_GREEN);
-    //init_pair(BG_BG, 0, 0); 
+    
 
 
-    /* Frog */
+    // Inizializzazione dei colori per la rana
     initColors(FROG_GREEN, 34, 177, 76);
     initColors(FROG_PINK, 255, 163, 177);
 
@@ -39,7 +41,7 @@ void setColors() {
     init_pair(BLACK_GREEN_GRASS, CROC_BLACK, COLOR_GREEN);
     init_pair(RED_HEARTS, COLOR_RED, COLOR_BLACK);
 
-    /* Den */
+    // Inizializzazione dei colori per le tane
     initColors(LIGHT_GREEN_DEN, 76, 175, 80); 
     initColors(DARK_GREEN_DEN, 27, 94, 32); 
 
@@ -48,7 +50,7 @@ void setColors() {
     init_pair(DARK_GREEN_DARK_GREEN, DARK_GREEN_DEN, DARK_GREEN_DEN);
     init_pair(LIGHT_GREEN_LIGHT_GREEN, LIGHT_GREEN_DEN, LIGHT_GREEN_DEN);
 
-    /* Grenade */
+    // Inizializzazione dei colori per le granate
     initColors(DARK_GREY_GRENADE, 66, 66, 66);
     initColors(LIGHT_GREY_GRENADE, 117, 117, 117);
     initColors(MID_GREY_BLACK, 74, 71, 74);
@@ -57,7 +59,7 @@ void setColors() {
     init_pair(LIGHT_DARK_GREY, LIGHT_GREY_GRENADE, DARK_GREY_GRENADE); 
     init_pair(MID_GREY_BLACK, MID_GREY_GRENADE, BLACK_GRENADE);
 
-    /* Projectile */
+    // Inizializzazione dei colori per i proiettili
     initColors(YELLOW_PROJECTILE, 255, 215, 64);
     initColors(LIGHT_ORANGE_PROJECTILE, 255, 171, 0);
     initColors(ORANGE_PROJECTILE, 255, 111, 0);

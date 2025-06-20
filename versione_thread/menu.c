@@ -1,13 +1,14 @@
 #include "menu.h"
 
-
-static int startx; // Dichiarate come statiche per ridurre la visibilità
+// Definizione delle costanti per la dimensione della finestra di gioco
+static int startx; 
 static int starty;
 
 int width = 130;  // Riduci un po' la larghezza della finestra
 int height = 35;  // Riduci un po' l'altezza della finestra
 
 
+// Funzione per animare la schermata di benvenuto
 void animate_welcome() {
     curs_set(0);
     nodelay(stdscr, TRUE);
@@ -49,7 +50,6 @@ void animate_welcome() {
     };
     
     int starty = 15;
-    //int startx = (COLS - 152) /2 ;
     int startx = (COLS/2) - 75;
 
     for (int i = 0; i < MAX_HEIGHT_WELCOME; i++) {
@@ -70,6 +70,7 @@ void animate_welcome() {
     setlocale(LC_ALL, "C.UTF-8");
 }
 
+// Funzione per stampare il menu
 void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choices) {
     int x = 1, y = 1;
     
@@ -91,14 +92,15 @@ void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choice
 }
 
 
+// Funzione per mostrare e gestire il menu principale
 int mainMenu(Game *game) {
     init_window_position();
-    WINDOW *menu_win = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx); // Usa le costanti
+    WINDOW *menu_win = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx); 
     int highlight = 1;
     int choice = 0;
     int c;
 
-    nodelay(menu_win, TRUE); // Usa menu_win
+    nodelay(menu_win, TRUE); 
     keypad(menu_win, TRUE);
     mvprintw(LINES - 2, 0, "Usa le frecce per muoverti; Invio per selezionare");
     refresh();
@@ -106,7 +108,7 @@ int mainMenu(Game *game) {
     int n_choices = sizeof(menu) / sizeof(MenuOption);
     print_menu(menu_win, highlight, menu, n_choices);
 
-    while ((c = wgetch(menu_win)) != 0) { // Leggi dalla finestra corretta
+    while ((c = wgetch(menu_win)) != 0) {
         switch (c) {
             case KEY_UP:
                 if (highlight == 1)
@@ -122,7 +124,7 @@ int mainMenu(Game *game) {
                     ++highlight;
                 break;
 
-            case '\n':  // Invio
+            case '\n':  
                 choice = highlight;
                 delwin(menu_win);
                 return choice;
@@ -131,13 +133,13 @@ int mainMenu(Game *game) {
                 break;
         }
 
-        // Rileggi l'input dopo l'elaborazione dell'azione
         print_menu(menu_win, highlight, menu, n_choices);
     }
     delwin(menu_win);
     return 0; 
 }
 
+// Funzione per mostrare e gestire il menu di selezione del livello
 int levelMenu(Game *game){
 
     init_window_position();
@@ -201,11 +203,13 @@ int levelMenu(Game *game){
     return 0; 
 }
 
+// Funzione per inizializzare la posizione della finestra
 void init_window_position() {
     startx = (COLS - width) / 2;
     starty = (LINES - height) / 2;
 }
 
+// Funzione per mostrare il menu di punteggi
 void displayScoreMenu(Game *game) {
 
     init_window_position();
@@ -236,7 +240,7 @@ void displayScoreMenu(Game *game) {
         
         // Linea separatrice
         for (int x = 5; x < GAME_WIDTH - 45; x++) {
-            mvwprintw(score_win, y - 1, x, "="); // Usa '=' invece di '-'
+            mvwprintw(score_win, y - 1, x, "="); 
         }
         
         while (fread(&entry, sizeof(ScoreEntry), 1, file) == 1 && count <= MAX_SCORES) {
@@ -264,7 +268,7 @@ void displayScoreMenu(Game *game) {
     
     wrefresh(score_win);
     
-    // Aspetta input dall'utente
+    // Aspetta l'input dall'utente
     wgetch(score_win);
     
     // Pulisci e ritorna al menu principale

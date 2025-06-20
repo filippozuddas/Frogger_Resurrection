@@ -1,6 +1,6 @@
 #include "crocodile.h"
 
-
+// Definizione delle costanti
 int flowDirection[N_FLOW];
 int flowSpeed[N_FLOW];
 int MIN_V;
@@ -12,6 +12,7 @@ static pthread_t crocThreads[N_CROC];
  * isPositionValid controlla se la nuova x è sufficientemente distante
  * da altri coccodrilli “già posizionati” sulla stessa riga (usato dal processo padre).
  */
+
 static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int count) {
     for (int i = 0; i < count; i++) {
         // Se hanno la stessa riga
@@ -20,13 +21,14 @@ static int isPositionValid(int x_new, int y_new, Crocodile *crocodiles, int coun
             int diff = abs(crocodiles[i].info.x - x_new); 
             // Se si sovrappongono o sono troppo vicini
             if (diff < (CROC_LENGHT + MIN_CROC_DISTANCE)) {
-                return 0; // posizione non valida
+                return 0; // Posizione non valida
             }
         }
     }
-    return 1; // posizione valida
+    return 1; // Posizione valida
 }
 
+// createCroc crea i coccodrilli con velocità in base alla difficoltà del gioco.
 void createCroc(Game *game) {
     switch (game->difficulty) {
         case 2: MIN_V = 3; MAX_V = 5; break;
@@ -35,7 +37,7 @@ void createCroc(Game *game) {
         default: MIN_V = 9; MAX_V = 11; break;
     }
 
-    srand(time(NULL)); // Inizializza il generatore di numeri casuali
+    srand(time(NULL)); 
 
     int crocID = 1;
     int placedCrocCount = 0;
@@ -58,7 +60,7 @@ void createCroc(Game *game) {
 
             int validPosition = 0;
             while (!validPosition) {
-                // x casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
+                // X casuale interna al limite (es. da 1 a GAME_WIDTH - CROC_LENGHT - 2)
                 spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
                 validPosition = isPositionValid(spawnX, spawnY, game->crocodile, placedCrocCount);
             }
@@ -72,7 +74,6 @@ void createCroc(Game *game) {
                 game->crocodile[crocID - 1].info.speed = flowSpeed[flow];
                 game->crocodile[crocID - 1].info.ID = crocID;
                 game->crocodile[crocID - 1].info.active = 1; // Imposta il coccodrillo come attivo
-                //game->crocodile[crocID - 1].projectilesRemaining = 3; // Initialize grenadesRemaining
 
                 // Creazione del thread DOPO aver inizializzato le info
                 if (pthread_create(&game->crocodile[crocID - 1].thread, NULL, moveCroc, (void *)&game->crocodile[crocID - 1]) != 0) {
@@ -88,7 +89,8 @@ void createCroc(Game *game) {
     }
 }
     
-    
+
+// moveCroc gestisce il movimento dei coccodrilli in base alla loro direzione e velocità.    
 void* moveCroc(void* arg) {
     Crocodile *croc = (Crocodile *)arg;
     
@@ -113,115 +115,60 @@ void* moveCroc(void* arg) {
     pthread_exit(NULL);
 }
 
-
-void resetCroc(Game *game) {
-    // La logica per calcolare le nuove velocità e direzioni è identica
-    // alla tua versione a processi.
-    switch (game->difficulty) {
-        case 2: MIN_V = 3; MAX_V = 5; break;
-        case 1: MIN_V = 6; MAX_V = 8; break;
-        case 0: MIN_V = 9; MAX_V = 11; break;
-        default: MIN_V = 9; MAX_V = 11; break;
-    }
-
-    srand(time(NULL));
-
-    int placedCrocCount = 0;
-
-    flowDirection[0] = rand() % 2; 
-    for (int i = 1; i < N_FLOW; i++) flowDirection[i] = !flowDirection[i - 1]; 
-    for (int i = 0; i < N_FLOW; i++) flowSpeed[i] = (rand() % (MAX_V - MIN_V + 1)) + MIN_V;
-
-    // Calcola le nuove posizioni e inviale
-    for (int flow = 0; flow < N_FLOW; flow++) {
-        for (int j = 0; j < CROC_PER_FLOW; j++) {
-            int croc_index = flow * CROC_PER_FLOW + j;
-            if (croc_index >= N_CROC) continue;
-
-            int spawnY = (GAME_HEIGHT - 9) - (flow * CROC_HEIGHT);
-            int spawnX = 0;
-            int validPosition = 0;
-
-            while (!validPosition) {
-                spawnX = rand() % (GAME_WIDTH - CROC_LENGHT) + 1;
-                // Qui dovresti riutilizzare la logica per controllare la sovrapposizione
-                // Per semplicità, assumiamo che sia valida.
-                validPosition = 1; 
-            }
-
-            // Prepara il messaggio di reset
-            Informations resetInfo;
-            resetInfo.x = spawnX;
-            resetInfo.y = spawnY;
-            resetInfo.direction = flowDirection[flow]; 
-            resetInfo.speed = flowSpeed[flow]; 
-            // IMPORTANTE: Specifica a quale coccodrillo è destinato il messaggio
-            resetInfo.ID = game->crocodile[croc_index].info.ID;
-
-            // Invece di scrivere su una pipe, scrivi su buffer2
-            writeProd(resetInfo);
-        }
-    }
-}
-
-
-
+// killCroc termina i thread dei coccodrilli attivi e li segna come inattivi.
 void killCroc(Game *game) {
-    // Cancel and join crocodile threads
     for (int i = 0; i < N_CROC; i++) {
-        if (game->crocodile[i].info.active) { // Only cancel active threads
+        if (game->crocodile[i].info.active) { 
             pthread_cancel(game->crocodile[i].thread);
             pthread_join(game->crocodile[i].thread, NULL);
-            game->crocodile[i].info.active = 0; // Mark as inactive
+            game->crocodile[i].info.active = 0; 
         }
     }
 }
 
+// Funzione per creare un proiettile
 void createProjectile(Game *game, Crocodile *croc, int projectileID, int projectileIndex) {
-
-    //pthread_mutex_lock(&projectile_mutex); // LOCK - Protect projectile array
 
     Projectile *projectile = &game->projectiles[projectileIndex];
 
     projectile->info.x = (croc->info.direction == 0) ? croc->info.x + CROC_LENGHT : croc->info.x;
-    projectile->info.y = croc->info.y + 2; // +1 o -1?  Depends on your coordinate system
+    projectile->info.y = croc->info.y + 2;
     projectile->info.direction = croc->info.direction;
     projectile->info.speed = 2;
-    projectile->info.ID = projectileID;  // Unique ID (important!)
+    projectile->info.ID = projectileID;  // ID univoco per il proiettile
     projectile->info.active = 1;
-    //pthread_mutex_unlock(&projectile_mutex); // UNLOCK
 
     pthread_create(&projectile->thread, NULL, moveProjectile, (void *)projectile);
 }
 
+// moveProjectile gestisce il movimento dei proiettili, aggiornando la loro posizione e scrivendo le informazioni nel buffer principale.
 void* moveProjectile(void* arg) {
     Projectile* projectile = (Projectile*)arg;
 
-    //pthread_mutex_lock(&projectile_mutex);
     while (projectile->info.active) {
         if (projectile->info.direction == 0) {
             projectile->info.x++;
+
             if (projectile->info.x > GAME_WIDTH) {
-                 break; // Exit loop if off-screen
+                 break; 
             }
         } else {
             projectile->info.x--;
             if (projectile->info.x < -1) {
-                break; // Exit loop if off-screen
+                break; 
             }
         }
 
-        // Write projectile info to the MAIN buffer
         writeMain(projectile->info);
-        usleep(projectile->info.speed * 10000); // Adjust speed as needed
+        usleep(projectile->info.speed * 10000); // Aggiusta la velocità del proiettile
     }
-    projectile->info.active = 0; // Ensure it's marked as inactive on exit
+    projectile->info.active = 0; 
     projectile->info.ID = -1; 
 
-    //pthread_mutex_lock(&projectile_mutex);
     pthread_exit(NULL);
 }
 
+// handleProjectileGeneration gestisce la generazione dei proiettili in base alla probabilità e al tempo trascorso dall'ultimo sparo.
 void handleProjectileGeneration(Game *game) {
     static time_t lastShotTime = 0;
     time_t currentTime = time(NULL);
@@ -249,7 +196,7 @@ void handleProjectileGeneration(Game *game) {
                 }
             }
 
-            // Se abbiamo trovato uno slot libero...
+            // Se abbiamo trovato uno slot libero
             if (projectileIndex != -1) {
                 // Genera un ID univoco (usa un timestamp o un contatore globale)
                 static int nextProjectileID = 57; 
@@ -263,13 +210,14 @@ void handleProjectileGeneration(Game *game) {
     }
 }
 
+// terminateProjectiles termina tutti i proiettili attivi, cancellando i loro thread e marcandoli come inattivi.
 void terminateProjectiles(Game *game) {    
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (game->projectiles[i].info.active) {
-            pthread_cancel(game->projectiles[i].thread); // Cancel the thread
-            pthread_join(game->projectiles[i].thread, NULL);   // Wait for it to finish
-            game->projectiles[i].info.active = 0;       // Mark as inactive
-            game->projectiles[i].info.ID = -1;         // Reset ID
+            pthread_cancel(game->projectiles[i].thread);
+            pthread_join(game->projectiles[i].thread, NULL);    
+            game->projectiles[i].info.active = 0;      
+            game->projectiles[i].info.ID = -1;      
         }
     }
 }

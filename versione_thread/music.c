@@ -1,5 +1,6 @@
 #include "music.h"
 
+// Inizializza SDL e SDL_mixer per la gestione dell'audio
 int initAudio() {
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         printf("Errore inizializzazione SDL: %s\n", SDL_GetError());
@@ -7,12 +8,13 @@ int initAudio() {
     }
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         printf("Errore inizializzazione SDL_mixer: %s\n", Mix_GetError());
-        SDL_Quit(); // De-inizializza SDL se l'inizializzazione di SDL_mixer fallisce.
+        SDL_Quit(); 
         return 0;
     }
     return 1;
 }
 
+// Funzioni per gestire la musica
 void startMusic(const char* file) {
     Mix_Music *music = Mix_LoadMUS(file);
     if (!music) {

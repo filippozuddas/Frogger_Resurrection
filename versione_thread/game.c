@@ -1,11 +1,13 @@
 #include "game.h"    
 #include "frog.h"
 
+// Definizione delle costanti per gli score
 ScoreNode* scoreList = NULL;
 
 
+// Inizializza le tane della rana. Le posizioni sono calcolate in base a costanti
 void initDens(Game *game) {
-    // initDens only calculates positions based on constants. No ncurses, no shared data.
+
     int denWidth = FROG_WIDTH;
     int denHeight = FROG_HEIGHT;
     int spacing = (GAME_WIDTH - N_DENS * denWidth) / (N_DENS + 1);
@@ -19,11 +21,12 @@ void initDens(Game *game) {
     }
 }
 
+// Inizializza il gioco, creando la finestra di gioco e impostando le condizioni iniziali
 void initGame(Game *game) {
     
     init_synchro();
     
-    srand(time(NULL)); // Seed random number generator
+    srand(time(NULL));
     
     const int startx = (COLS - GAME_WIDTH) / 2;
     const int starty = (LINES - GAME_HEIGHT) / 2;
@@ -35,7 +38,7 @@ void initGame(Game *game) {
         exit(1);
     }
     
-    // 1. Create the game window *FIRST*
+    // Crea la finestra di gioco
     game->gameWin = newwin(GAME_HEIGHT, GAME_WIDTH, starty, startx);
     if (game->gameWin == NULL) {
         endwin();
@@ -46,12 +49,11 @@ void initGame(Game *game) {
     nodelay(game->gameWin, TRUE);
     keypad(game->gameWin, TRUE); 
     
-    // 2. Initialize and draw the map *IMMEDIATELY* after window creation
-    inizializza_mappa(); // Sets up color pairs (must be inside ncurses_mutex)
-    initDens(game);        // Calculate den positions (no ncurses calls)
-    //disegna_mappa(game);  // Draws the map to game->gameWin (inside ncurses_mutex)
+    // Inizializza le strutture del gioco
+    inizializza_mappa();
+    initDens(game);       
 
-    /* Imposta la musica di gioco in base alla difficoltà */
+    // Imposta la musica in base alla difficoltà
     switch (game->difficulty) {
         case 0: startMusic("../music/LIVELLO1(130BPM).wav"); break;
         case 1: startMusic("../music/LIVELLO2(145BPM).wav"); break;
@@ -59,7 +61,7 @@ void initGame(Game *game) {
         default: startMusic("../music/LIVELLO1(130BPM).wav"); break;
     }
 
-    // 3. Initialize game entities (grenades and projectiles - no thread creation yet)
+    // Inizializza granate e proiettili
     for (int i = 0; i < MAX_GRENADES; i++) {
         game->grenades[i].info.ID = -1;
         game->grenades[i].info.active = 0;
@@ -69,16 +71,18 @@ void initGame(Game *game) {
         game->projectiles[i].info.active = 0;
     }
     
+    // Fa partire il gioco
     game->isRunning = 1;
 }
 
 
+// Funzione principale del gioco, gestisce la logica di gioco e le interazioni tra i thread
 void runGame(Game* game, int game_socket_fd) {
     
-    createCroc(game);  // Create crocodile threads
-    createFrog(game);  // Create frog thread
+    createCroc(game);  
+    createFrog(game); 
 
-    
+    // Crea i puntatori per semplificare l'accesso agli oggetti del gioco
     Frog *frog = &game->frog;
     Crocodile *croc = game->crocodile;
     Projectile *projectiles = game->projectiles;
@@ -90,7 +94,7 @@ void runGame(Game* game, int game_socket_fd) {
     
     int playerCrocID = 0;
     int grenadeID = N_CROC + 1; 
-    int countdownTime = 90; // Tempo iniziale per il countdown in secondi    
+    int countdownTime = 90;   
 
     // Imposta il tempo di gioco in base alla difficoltà
     switch (game->difficulty) {
@@ -101,8 +105,9 @@ void runGame(Game* game, int game_socket_fd) {
     }
 
     int millisecondCounter = 0;
-    int timerMax = countdownTime;  // Impostiamo il valore massimo per la barra
+    int timerMax = countdownTime;  
     
+    // Inizializza il gioco
     while (game->isRunning) {
         
         usleep(6000);  // Controllo del timer ogni 6 millisecondi
@@ -130,8 +135,8 @@ void runGame(Game* game, int game_socket_fd) {
 
             terminateGrenades(game);
             terminateProjectiles(game);
-            resetCroc(game); 
-
+            killCroc(game);
+            createCroc(game);
             continue;
         }
 
@@ -139,10 +144,10 @@ void runGame(Game* game, int game_socket_fd) {
         //------------------------- LETTURA DA MAIN BUFFER PER IDENTIFICARE OGGETTO ----------------------------------
         
          
-        // 1. Memorizza la posizione della rana all'inizio del frame
+        // Memorizza la posizione della rana all'inizio del frame
         int old_frog_x = frog->info.x;
 
-        // 2. Raccogli tutti gli input (dal client e dai thread)
+        // Raccogle tutti gli input (dal client e dai thread)
         if (receiveInfo(game_socket_fd, &socketInfo) > 0) {
             if (socketInfo.ID == 0) {
                 frog->info = socketInfo;
@@ -160,12 +165,12 @@ void runGame(Game* game, int game_socket_fd) {
                 croc[info.ID - 1].info = info;
             }
 
-            /* ID -1 e -2 usati come flag per creare le granate, rispettivamente destra e sinistra */
+            // ID -1 e -2 sono utilizzati per le granate lanciate dalla rana
             else if (info.ID == -1 || info.ID == -2) {
                 int direction = (info.ID == -1) ? 1 : -1; 
                 int grenadeIndex = -1; 
 
-                /* Trovo uno slot dell'array libero */
+                // Trova un indice libero per la granata
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (!grenades[i].info.active) {
                         grenadeIndex = i; 
@@ -178,7 +183,7 @@ void runGame(Game* game, int game_socket_fd) {
                 }
             }
 
-            /* ID tra 26 e 56 corrispondono alle granate della rana */
+            // ID > N_CROC e <= 56 sono utilizzati per le granate lanciate dai coccodrilli
             else if (info.ID > N_CROC && info.ID <= 56){
                 for (int i = 0; i < MAX_GRENADES; i++) {
                     if (grenades[i].info.ID == info.ID) {
@@ -188,6 +193,7 @@ void runGame(Game* game, int game_socket_fd) {
                 }
             }
 
+            // ID > 56 sono utilizzati per i proiettili lanciati dai coccodrilli
             else if (info.ID > 56) {
                 for (int i = 0; i < MAX_PROJECTILES; i++) {
                     if (projectiles[i].info.ID == info.ID) {
@@ -200,7 +206,7 @@ void runGame(Game* game, int game_socket_fd) {
 
         handleProjectileGeneration(game);
 
-        /* Rilevamento collisione Rana-proiettile */
+        // Rilevamento collisione rana-proiettile
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (projectiles[i].info.active) {
                 if (checkCollisionProjectile(frog->info, projectiles[i])) {
@@ -234,14 +240,14 @@ void runGame(Game* game, int game_socket_fd) {
             }
         }
 
-        /* Rilevamento collisione granata-proiettile */
+        // Rilevamento collisione granata-proiettile
         for (int i = 0; i < MAX_GRENADES; i++) {
             if (grenades[i].info.active == 1) { // Se la granata è attiva
                 for (int j = 0; j < MAX_PROJECTILES; j++) {
                     if (projectiles[j].info.active == 1) { // Se il proiettile è attivo
                         if (checkCollisionProjectile(grenades[i].info, projectiles[j])) {
-                            // Collisione!
-                        
+
+                            // Collisione
                             pthread_cancel(game->grenades[i].thread);
                             pthread_join(game->grenades[i].thread, NULL);
                             grenades[i].info.active = 0;          // Libera lo slot granata
@@ -256,26 +262,21 @@ void runGame(Game* game, int game_socket_fd) {
             }
         }
 
-        // 3. Applica la logica di gioco
         playerCrocID = isFrogOnCroc(game);
 
-        // --- LOGICA CHIAVE MODIFICATA ---
-
-        // A. Se il giocatore ha mosso la rana in questo frame...
         if (frog->isOnCroc && (frog->info.x != old_frog_x)) {
-            // aggiorniamo l'offset per riflettere questo nuovo posizionamento relativo
-            // Calcoliamo di quanto si è mossa la rana e lo aggiungiamo all'offset.
             frog->onCrocOffset += (frog->info.x - old_frog_x);
         }
         
-        // B. Applica il movimento passivo del coccodrillo usando l'offset (potenzialmente appena aggiornato)
+        // Applica il movimento passivo del coccodrillo usando l'offset 
         if (frog->isOnCroc) {
             frog->info.x = croc[playerCrocID - 1].info.x + frog->onCrocOffset;
         }
 
-        // 4. Invia lo stato finale al client e stampa
+        // Invia lo stato finale al client e stampa
         sendInfo(game_socket_fd, &frog->info);
 
+        // Controlla se la rana è su una tana
         if (isFrogOnDen(game)) {
             frog->score += 100; 
             frog->info.grenadesRemaining = 10;
@@ -321,6 +322,7 @@ void runGame(Game* game, int game_socket_fd) {
             }   
         }
 
+        // Controlla se la rana è morta
         if((frog->isOnCroc == 0 && isFrogOnRiver(game)) || 
             isFrogOnTopRiver(game) ||
             frog->info.x < 0 || frog->info.x + FROG_WIDTH > GAME_WIDTH) {
@@ -351,6 +353,7 @@ void runGame(Game* game, int game_socket_fd) {
             continue;
         } 
         
+        // Gestione della visualizzazione del gioco
         werase(game->gameWin);
         disegna_mappa(game);
         
@@ -377,8 +380,8 @@ void runGame(Game* game, int game_socket_fd) {
     }
 }
        
+// Termina il gioco, cancellando i thread attivi e mostrando il risultato finale
 void stopGame(Game *game) {
-    // Terminate all active threads (projectiles, grenades, crocodiles)
     for(int i = 0; i < MAX_PROJECTILES; i++) {
         if(game->projectiles[i].info.ID != -1) {
             pthread_cancel(game->projectiles[i].thread);
@@ -398,6 +401,7 @@ void stopGame(Game *game) {
         }
     }
 
+    // Cancella la finestra di gioco e mostra il risultato finale
     werase(game->gameWin); 
 
 	if (game->frog.lives == 0 || timerHandler(&game, NULL, 0, 0) <= 0) {
@@ -418,13 +422,14 @@ void stopGame(Game *game) {
     int ch; 
     while((ch = wgetch(game->gameWin)) == ERR); 
 
-      stopMusic();
+    stopMusic();
     deallocate_synchro();
 	
     delwin(game->gameWin);
 }
     
     
+// Funzione per stampare il messaggio di Game Over
 void printGameOver(WINDOW *win) {
     const wchar_t *pattern[] = {
         L" ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓██████████████▓▒░░▒▓████████▓▒░       ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░  ",
@@ -437,13 +442,14 @@ void printGameOver(WINDOW *win) {
     pthread_mutex_lock(&ncurses_mutex);
     wattron(win, COLOR_PAIR(RED_HEARTS));
     for (int i = 0; i < 6; i++) {
-        mvwaddwstr(win, i+20, (GAME_WIDTH - 121) / 2, pattern[i]);  // Spostato in basso
+        mvwaddwstr(win, i+20, (GAME_WIDTH - 121) / 2, pattern[i]);  
     }
     wattroff(win, COLOR_PAIR(RED_HEARTS));
     pthread_mutex_unlock(&ncurses_mutex);
 }
 
 
+// Funzione per stampare il messaggio di vittoria
 void printYouWon(WINDOW *win){
     const wchar_t *pattern[] = {
         L"░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓███████▓▒░░▒▓█▓▒░",
@@ -464,28 +470,30 @@ void printYouWon(WINDOW *win){
 }
 
 
+// Funzione per disegnare i cuori che rappresentano le vite rimanenti
 void drawLives(WINDOW *win, int lives) {
-    // Calcola la posizione centrale per i cuori
-    int heartsWidth = lives * 2;  // Ogni cuore occupa 2 spazi
+
+    int heartsWidth = lives * 2;  
     int startX = (GAME_WIDTH - heartsWidth) / 2;
-    // Posiziona i cuori sopra la barra del tempo
+
     wmove(win, 1, startX);
-    wattron(win, COLOR_PAIR(RED_HEARTS));  // Usa il colore rosso per i cuori
+    wattron(win, COLOR_PAIR(RED_HEARTS));  
     
     for (int i = 0; i < lives; i++) {
-        wprintw(win, "♥ ");  // Stampa un cuore con uno spazio
+        wprintw(win, "♥ ");  
     }
     
     wattroff(win, COLOR_PAIR(RED_HEARTS));
 }
     
+// Funzione per disegnare la barra del timer
 void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax) {
-    int progressBarWidth = GAME_WIDTH - 9;  // Larghezza della barra
-    int filledBlocks = (timeLeft * progressBarWidth) / timerMax;  // Blocchi pieni in base al tempo rimanente
-    int remainingBlocks = progressBarWidth - filledBlocks;  // Blocchi vuoti
+    int progressBarWidth = GAME_WIDTH - 9;  
+    int filledBlocks = (timeLeft * progressBarWidth) / timerMax;  
+    int remainingBlocks = progressBarWidth - filledBlocks;  
 
     pthread_mutex_lock(&ncurses_mutex);
-    // Posizioniamo il cursore per disegnare la barra
+
     wmove(win, 3, 5);
     wprintw(win, "[");
     
@@ -496,7 +504,7 @@ void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax) {
     }
     wattroff(win, COLOR_PAIR(GREEN_BLACK));  
     
-    // Disegniamo i blocchi vuoti (rosso) che rappresentano il tempo rimanente
+    // Disegniamo i blocchi vuoti che rappresentano il tempo rimanente
     wattron(win, COLOR_PAIR(COLOR_RED));  
     for (int i = 0; i < remainingBlocks; i++) {
         wprintw(win, "░");
@@ -507,14 +515,13 @@ void drawTimer(Game *game, WINDOW *win, int timeLeft, int timerMax) {
     pthread_mutex_unlock(&ncurses_mutex);    
 }
     
-
+// Funzione per gestire il timer del gioco, decrementando il tempo rimanente ogni secondo
 int timerHandler(Game *game, int *millisecondCounter, int countdownTime, int timerMax) {
-    *millisecondCounter += 5;  // Incrementa il contatore del millisecondo di 5
-
-    if (*millisecondCounter >= 1000) {  // Ogni secondo
-        *millisecondCounter = 0;  // Reset del contatore dei millisecondi
-        countdownTime--;  // Diminuisce il tempo rimasto
+    *millisecondCounter += 5;  
+    if (*millisecondCounter >= 1000) {  
+        *millisecondCounter = 0; 
+        countdownTime--; 
     }
-    return countdownTime;  // Ritorna il tempo rimanente
+    return countdownTime;  
 }
 

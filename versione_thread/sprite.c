@@ -1,5 +1,6 @@
 #include "sprite.h"
 
+// Funzione per stampare il coccodrillo
 void printCroc(WINDOW *win, int x, int y, int direction) {
     wchar_t crocSprite[CROC_HEIGHT][CROC_LENGHT] = {
         {L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'n', L'▄', L'▄', L'n', L'n', L'n', L'n', L'n', L'n'},
@@ -42,6 +43,7 @@ void printCroc(WINDOW *win, int x, int y, int direction) {
     }
 }
 
+// Funzione per stampare la rana
 void printFrog(Game *game, WINDOW *win, int x, int y) {
     wchar_t frogSprite[FROG_HEIGHT][FROG_WIDTH] = {
         {L'n', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'n'},
@@ -92,6 +94,7 @@ void printFrog(Game *game, WINDOW *win, int x, int y) {
     } 
 }
 
+// Funzione per stampare la rana sulla tana
 void printFrogOnDen(WINDOW *win, int x, int y) {
     wchar_t frogSprite[FROG_HEIGHT][FROG_WIDTH] = {
         {L'n', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'▄', L'n'},
@@ -118,6 +121,7 @@ void printFrogOnDen(WINDOW *win, int x, int y) {
     } 
 }
 
+// Funzione per stampare le granate
 void printGrenades(Game *game) {
     wchar_t grenadeSprite[1][2] = {
         {L'▄', L'▄'}
@@ -142,6 +146,7 @@ void printGrenades(Game *game) {
     }
 }
 
+// Funzione per stampare i proiettili
 void printProjectiles(Game *game) {
     wchar_t projectileSprite[1][3] = {
         {L' ', L' ', L' '}
@@ -166,6 +171,7 @@ void printProjectiles(Game *game) {
     }
 }
 
+// Funzione per stampare la tana
 void printDen(Game *game, int x, int y) {
     wchar_t denSprite[FROG_HEIGHT][FROG_WIDTH] = {
         {L'n', L'▄', L'▄', L'▄', L'n', L'n', L'▄', L'▄', L'▄', L'n'},
@@ -192,6 +198,7 @@ void printDen(Game *game, int x, int y) {
     } 
 }
 
+// Struttura per le opzioni del menu
 MenuOption menu[MENU_ITEMS] = {
     {1, {
         L"██████╗░██╗░░░░░░█████╗░██╗░░░██╗",
@@ -223,6 +230,7 @@ MenuOption menu[MENU_ITEMS] = {
     }}
 };
 
+// Struttura per le opzioni del livello
 MenuOption level[LEVEL_ITEMS] = {
     {1, {
         L"███████╗░█████╗░░██████╗██╗░░░██╗",

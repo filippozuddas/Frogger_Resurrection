@@ -1,8 +1,9 @@
 
 #include "librerie.h"
 
+// MAIN 
 int main() {
-    //attiva i caratteri speciali dell'UNICODE
+    // Inizializzazione di ncurses
     setlocale(LC_ALL, ""); 
     initscr();
     cbreak();
@@ -11,12 +12,12 @@ int main() {
     start_color();
     setColors();
 
-    /* Inizializzazione dell'audio per le musiche di gioco */
     if (!initAudio()) {
         endwin();
         exit(1);
     }
     
+    // Crea il socket del server e accetta la connessione del client
     int server_socket_fd = createServerSocket();
     if (server_socket_fd == -1) {
         endwin();
