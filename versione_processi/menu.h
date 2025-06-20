@@ -6,12 +6,10 @@
 #include <locale.h>
 #include <wchar.h>
 
-// Poi le librerie ncurses nell'ordine corretto
-#include <ncursesw/curses.h>  // Prima curses.h
-#include <menu.h>             // Poi menu.h
+#include <ncursesw/curses.h>  
+#include <menu.h>             
 
-// Infine i tuoi header personalizzati
-#include "struct.h"  // Il tuo header con le strutture
+#include "struct.h"  e
 #include "game.h"
 #include "sprite.h"
 
