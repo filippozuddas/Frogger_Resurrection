@@ -7,9 +7,9 @@
 #include <wchar.h>
 
 #include <ncursesw/curses.h>  
-#include <menu.h>             
+#include <menu.h>            
 
-#include "struct.h"  e
+#include "struct.h"  
 #include "game.h"
 #include "sprite.h"
 

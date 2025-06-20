@@ -92,6 +92,7 @@ typedef struct Den {
 typedef struct Game{
     unsigned int isRunning; // Flag: 1 se il gioco è in esecuzione, 0 altrimenti
     int pipeFd[2];          // Pipe principale
+    int mainToFrogPipe[2]; 
     Frog frog;              // Istanza della rana (giocatore)
     Crocodile crocodile[N_CROC]; // Array dei coccodrilli
     Grenade grenades[MAX_GRENADES]; // Array delle granate
