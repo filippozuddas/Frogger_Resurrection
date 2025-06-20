@@ -4,13 +4,12 @@
 #include "sprite.h"
 #include <locale.h>
 
-
-int width = 130;  // Riduci un po' la larghezza della finestra
-int height = 35;  // Riduci un po' l'altezza della finestra
+int width = 130;  
+int height = 35;  
 int startx;
 int starty;
 
-
+// Funzione per stampare la schermata di benvenuto
 void animate_welcome() {
     curs_set(0);
     nodelay(stdscr, TRUE);
@@ -52,7 +51,6 @@ void animate_welcome() {
     };
     
     int starty = 15;
-    //int startx = (COLS - 152) /2 ;
     int startx = (COLS/2) - 75;
 
     for (int i = 0; i < MAX_HEIGHT_WELCOME; i++) {
@@ -73,6 +71,7 @@ void animate_welcome() {
     setlocale(LC_ALL, "C.UTF-8");
 }
 
+// Funzione per stampare il menu
 void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choices) {
     int x = 1, y = 1;
 
@@ -93,6 +92,7 @@ void print_menu(WINDOW *menu_win, int highlight, MenuOption menu[], int n_choice
     wrefresh(menu_win);
 }
 
+// Funzione per la gestione del menu principale
 int mainMenu(Game *game){
 
     init_window_position();
@@ -103,14 +103,12 @@ int mainMenu(Game *game){
     int choice = 0;
     int c;
 
-    nodelay(menu_win, 0);  // Imposta un timeout di 0 per non bloccare
-
+    nodelay(menu_win, 0);  
 
     keypad(menu_win, TRUE);
     mvprintw(LINES - 2, 0, "Usa le frecce per muoverti; Invio per selezionare");
     refresh();
 
-    
     int n_choices = sizeof(menu) / sizeof(MenuOption);
     
     print_menu(menu_win, highlight, menu, n_choices);
@@ -142,6 +140,7 @@ int mainMenu(Game *game){
     return 0; 
 }
 
+// Funzione per gestire il menu di selezione del livello di difficoltà
 int levelMenu(Game *game){
 
     init_window_position();
@@ -205,11 +204,13 @@ int levelMenu(Game *game){
     return 0; 
 }
 
+// Funzione per inizializzare la posizione della finestra del menu
 void init_window_position() {
     startx = (COLS - width) / 2;
     starty = (LINES - height) / 2;
 }
 
+// Funzione per visualizzare il menu dei punteggi
 void displayScoreMenu(Game *game) {
 
     init_window_position();

@@ -1,3 +1,7 @@
+/*
+ * Questo file contiene le funzioni per definire colori personalizzati in formato RGB
+ * e per creare le coppie di colori (primo piano e sfondo) utilizzate
+ */
 #include "colors.h"
 
 void initColors(short c, short r, short g, short b) {
@@ -22,7 +26,6 @@ void setColors() {
     init_pair(WHITE_GREEN, CROC_WHITE, CROC_GREEN); 
     init_pair(BG_BLACK, COLOR_BLUE, CROC_BLACK); 
     init_pair(BG_GREEN , COLOR_BLACK, COLOR_GREEN);
-    //init_pair(BG_BG, 0, 0); 
 
 
     /* Frog */

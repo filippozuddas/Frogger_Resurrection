@@ -1,6 +1,6 @@
 #include "map.h"
 
-
+// Inizializza la mappa del gioco
 void inizializza_mappa() {
     // Inizializzazione colori
     init_pair(1, COLOR_BLACK, COLOR_YELLOW);  // Marciapiede e tane
@@ -8,6 +8,7 @@ void inizializza_mappa() {
     init_pair(3, COLOR_BLACK, COLOR_GREEN); // Sponda argine
 }
 
+// Stampa un blocco di colore specifico nella finestra di gioco
 void disegna_blocco(WINDOW *win, int starty, int startx, int height, int width, int color_pair) {
     wattron(win, COLOR_PAIR(color_pair));
     for (int y = starty; y < starty + height; y++) {
@@ -18,6 +19,7 @@ void disegna_blocco(WINDOW *win, int starty, int startx, int height, int width, 
     wattroff(win, COLOR_PAIR(color_pair));
 }
 
+// Stampa la mappa completa, comprese le tane
 void disegna_mappa(Game *game) {
     // Disegna il marciapiede di partenza
     disegna_blocco(game->gameWin, 5, 0, 60, GAME_WIDTH, 2);  // Fiume

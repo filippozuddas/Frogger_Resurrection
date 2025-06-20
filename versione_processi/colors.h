@@ -7,13 +7,13 @@
 void initColors(short c, short r, short g, short b); 
 void setColors(); 
 
-//croc
+/* croc */
 
 #define CROC_GREEN 9 
 #define CROC_WHITE 10
 #define CROC_BLACK 11
 
-//Coppie di colori 
+/* Coppie di colori */
 
 #define BLACK_BG 10
 #define GREEN_BLACK 11
@@ -41,7 +41,7 @@ void setColors();
 #define BLACK_BLACK_CROC 26
 #define BLACK_GREEN_GRASS 27
 
-/*vite*/
+/* vite */
 #define RED_HEARTS 29
 
 /* Den */
